@@ -4,20 +4,20 @@ from django.shortcuts import render
 import io
 import urllib
 import base64
-# Create your views here.
-
+from datetime import datetime, timedelta
+from .models import Stock, StockDetails
 
 def home(request):
     query = request.GET.get('ticker', '').strip().upper()
     stock_names = [
-    "ADANIPORTS.NS", "APOLLOHOSP.NS", "ASIANPAINT.NS", "AXISBANK.NS", "BAJAJ-AUTO.NS", "BAJFINANCE.NS",
-    "BAJAJFINSV.NS", "BPCL.NS", "BHARTIARTL.NS", "BRITANNIA.NS", "CIPLA.NS", "COALINDIA.NS", "DIVISLAB.NS",
-    "DRREDDY.NS", "EICHERMOT.NS", "GRASIM.NS", "HCLTECH.NS", "HDFCBANK.NS", "HDFCLIFE.NS", "HEROMOTOCO.NS",
-    "HINDALCO.NS", "HINDUNILVR.NS", "HDFC.NS", "ICICIBANK.NS", "ITC.NS", "INDUSINDBK.NS", "INFY.NS",
-    "JSWSTEEL.NS", "KOTAKBANK.NS", "LT.NS", "M&M.NS", "MARUTI.NS", "NTPC.NS", "NESTLEIND.NS", "ONGC.NS",
-    "POWERGRID.NS", "RELIANCE.NS", "SBILIFE.NS", "SBIN.NS", "SUNPHARMA.NS", "TCS.NS", "TATACONSUM.NS",
-    "TATAMOTORS.NS", "TATASTEEL.NS", "TECHM.NS", "TITAN.NS", "ULTRACEMCO.NS", "UPL.NS", "WIPRO.NS"
-]
+        "ADANIPORTS.NS", "APOLLOHOSP.NS", "ASIANPAINT.NS", "AXISBANK.NS", "BAJAJ-AUTO.NS", "BAJFINANCE.NS",
+        "BAJAJFINSV.NS", "BPCL.NS", "BHARTIARTL.NS", "BRITANNIA.NS", "CIPLA.NS", "COALINDIA.NS", "DIVISLAB.NS",
+        "DRREDDY.NS", "EICHERMOT.NS", "GRASIM.NS", "HCLTECH.NS", "HDFCBANK.NS", "HDFCLIFE.NS", "HEROMOTOCO.NS",
+        "HINDALCO.NS", "HINDUNILVR.NS", "HDFC.NS", "ICICIBANK.NS", "ITC.NS", "INDUSINDBK.NS", "INFY.NS",
+        "JSWSTEEL.NS", "KOTAKBANK.NS", "LT.NS", "M&M.NS", "MARUTI.NS", "NTPC.NS", "NESTLEIND.NS", "ONGC.NS",
+        "POWERGRID.NS", "RELIANCE.NS", "SBILIFE.NS", "SBIN.NS", "SUNPHARMA.NS", "TCS.NS", "TATACONSUM.NS",
+        "TATAMOTORS.NS", "TATASTEEL.NS", "TECHM.NS", "TITAN.NS", "ULTRACEMCO.NS", "UPL.NS", "WIPRO.NS"
+    ]
 
     if query:
         filtered_stocks = [ticker for ticker in stock_names if query in ticker.upper()]
@@ -26,10 +26,49 @@ def home(request):
         filtered_stocks = []
         print("No stocks found")
     print(query)
+
+    stock_data = []
+    end_date = datetime.today()
+    start_date = end_date - timedelta(days=30)
+    
+    try:
+        for ticker in stock_names:
+            stock = yf.Ticker(ticker)
+            hist = stock.history(start=start_date, end=end_date)
+            if not hist.empty:
+                open_price = hist['Close'].iloc[0]  
+                close_price = round(hist['Close'].iloc[-1],2)  
+                percentage_change = ((close_price - open_price) / open_price) * 100
+                # StockDetails(
+                #     stock=Stock.objects.get_or_create(yfinance_name=ticker),
+                #     closing_price=close_price,
+                #     percentage_change=percentage_change,
+                #     date=end_date
+                # )
+                # StockDetails.save()
+                stock_data.append({
+                    'ticker': ticker,
+                    'price': close_price,
+                    'percentage_change': percentage_change
+                })
+                
+                
+    except Exception as e:
+        print(f"Error fetching stock data: {e}")
+
+    stock_data_sorted = sorted(stock_data, key=lambda x: x['percentage_change'], reverse=True)
+    top_gainers = stock_data_sorted[:20]  
+    top_losers = stock_data_sorted[-20:]  
+    
     context = {
-        'filtered_stocks':filtered_stocks
-    }
-    return render(request, 'home.html',context)
+            'filtered_stocks': filtered_stocks,
+            'top_gainers': top_gainers,
+            'top_losers': top_losers,
+        }
+    return render(request, 'home.html', context)
+
+
+
 
 
 def stock(request):
@@ -81,7 +120,7 @@ def stock(request):
         # If no valid ticker found, return an empty context or an error message
         context = {
             'error': "No stock data available for the provided search query.",
-            'filtered_stocks': filtered_stocks,
+            
         }
 
     return render(request, 'stock_details.html', context)
