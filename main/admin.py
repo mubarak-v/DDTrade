@@ -5,3 +5,5 @@ from .models import Stock, StockDetails
 
 
 admin.site.register(StockDetails)
+admin.site.register(Stock)
+

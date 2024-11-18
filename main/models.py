@@ -1,6 +1,7 @@
 from django.db import models
 
 class Stock(models.Model):
+    
     name = models.CharField(max_length=100, unique=True) 
     yfinance_name = models.CharField(max_length=50, unique=True)  
 
@@ -9,10 +10,15 @@ class Stock(models.Model):
 
 
 class StockDetails(models.Model):
-    yfinance_name = models.CharField(max_length=50, unique=True) 
-    closing_price = models.CharField(max_length=10,)  
+    
+    stock = models.ForeignKey(
+        Stock,
+        on_delete=models.CASCADE,
+        null=True,  
+        blank=True  )
+    closing_price = models.DecimalField(max_digits=10, decimal_places=2)  # Adjusted for numeric data
     percentage_change = models.DecimalField(max_digits=5, decimal_places=2)  
-    date = models.DateField(auto_now_add=True)  
+    date = models.DateField(auto_now_add=True)  # Keeps the default of auto-setting the creation date
 
     def __str__(self):
-        return f"{self.stock} - {self.type} ({self.date})"
+        return f"{self.stock.name} on {self.date}: {self.closing_price}"

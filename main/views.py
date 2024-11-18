@@ -36,25 +36,26 @@ def home(request):
             stock = yf.Ticker(ticker)
             hist = stock.history(start=start_date, end=end_date)
             if not hist.empty:
-                open_price = hist['Close'].iloc[0]  
-                close_price = round(hist['Close'].iloc[-1],2)  
+                open_price = hist['Close'].iloc[0]
+                close_price = round(hist['Close'].iloc[-1], 2)
                 percentage_change = ((close_price - open_price) / open_price) * 100
-                # StockDetails(
-                #     stock=Stock.objects.get_or_create(yfinance_name=ticker),
-                #     closing_price=close_price,
-                #     percentage_change=percentage_change,
-                #     date=end_date
-                # )
-                # StockDetails.save()
-                stock_data.append({
-                    'ticker': ticker,
-                    'price': close_price,
-                    'percentage_change': percentage_change
-                })
-                
-                
+
+                # Ensure the Stock object is correctly fetched or created
+                stock_obj, created = Stock.objects.get_or_create(
+                    yfinance_name=ticker,
+                    defaults={'name': ticker}  # Provide a default name
+                )
+
+                # Save StockDetails with valid foreign key and data
+                StockDetails.objects.create(
+                    stock=stock_obj,  # Valid Stock instance
+                    closing_price=close_price,
+                    percentage_change=percentage_change
+                )
+
     except Exception as e:
-        print(f"Error fetching stock data: {e}")
+        print(f"Error processing stocks: {e}")
+
 
     stock_data_sorted = sorted(stock_data, key=lambda x: x['percentage_change'], reverse=True)
     top_gainers = stock_data_sorted[:20]  

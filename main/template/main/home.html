@@ -256,7 +256,7 @@
               </div>
               <div class="w-1/4 text-right">
                 <div
-                  class="text-green-500 flex items-center justify-end space-x-1"
+                  class="{% if stock.percentage_change >= 0 %} text-green-500 {% else %} text-red-500 {% endif %} flex items-center justify-end space-x-1"
                 >
                   <i class="fas fa-caret-up"></i>
                   <span>{{ stock.percentage_change|floatformat:2 }}%</span>
