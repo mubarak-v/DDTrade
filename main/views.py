@@ -7,8 +7,9 @@ import base64
 from datetime import datetime, timedelta
 from .models import Stock, StockDetails
 
-def home(request):
-    query = request.GET.get('ticker', '').strip().upper()
+def getStock():
+    today = datetime.today()
+    start_date = today - timedelta(days=30)
     stock_names = [
         "ADANIPORTS.NS", "APOLLOHOSP.NS", "ASIANPAINT.NS", "AXISBANK.NS", "BAJAJ-AUTO.NS", "BAJFINANCE.NS",
         "BAJAJFINSV.NS", "BPCL.NS", "BHARTIARTL.NS", "BRITANNIA.NS", "CIPLA.NS", "COALINDIA.NS", "DIVISLAB.NS",
@@ -18,23 +19,11 @@ def home(request):
         "POWERGRID.NS", "RELIANCE.NS", "SBILIFE.NS", "SBIN.NS", "SUNPHARMA.NS", "TCS.NS", "TATACONSUM.NS",
         "TATAMOTORS.NS", "TATASTEEL.NS", "TECHM.NS", "TITAN.NS", "ULTRACEMCO.NS", "UPL.NS", "WIPRO.NS"
     ]
-
-    if query:
-        filtered_stocks = [ticker for ticker in stock_names if query in ticker.upper()]
-        print(f"Filtered stocks: {filtered_stocks}")
-    else:
-        filtered_stocks = []
-        print("No stocks found")
-    print(query)
-
-    stock_data = []
-    end_date = datetime.today()
-    start_date = end_date - timedelta(days=30)
-    
+    start_date = today - timedelta(days=60)
     try:
         for ticker in stock_names:
             stock = yf.Ticker(ticker)
-            hist = stock.history(start=start_date, end=end_date)
+            hist = stock.history(start=start_date, end=today)
             if not hist.empty:
                 open_price = hist['Close'].iloc[0]
                 close_price = round(hist['Close'].iloc[-1], 2)
@@ -52,19 +41,36 @@ def home(request):
                     closing_price=close_price,
                     percentage_change=percentage_change
                 )
-
     except Exception as e:
         print(f"Error processing stocks: {e}")
-
-
+    
+def home(request):
+    query = request.GET.get('ticker', '').strip().upper()
+    stock_names = [
+        "ADANIPORTS.NS", "APOLLOHOSP.NS", "ASIANPAINT.NS", "AXISBANK.NS", "BAJAJ-AUTO.NS", "BAJFINANCE.NS",
+        "BAJAJFINSV.NS", "BPCL.NS", "BHARTIARTL.NS", "BRITANNIA.NS", "CIPLA.NS", "COALINDIA.NS", "DIVISLAB.NS",
+        "DRREDDY.NS", "EICHERMOT.NS", "GRASIM.NS", "HCLTECH.NS", "HDFCBANK.NS", "HDFCLIFE.NS", "HEROMOTOCO.NS",
+        "HINDALCO.NS", "HINDUNILVR.NS", "HDFC.NS", "ICICIBANK.NS", "ITC.NS", "INDUSINDBK.NS", "INFY.NS",
+        "JSWSTEEL.NS", "KOTAKBANK.NS", "LT.NS", "M&M.NS", "MARUTI.NS", "NTPC.NS", "NESTLEIND.NS", "ONGC.NS",
+        "POWERGRID.NS", "RELIANCE.NS", "SBILIFE.NS", "SBIN.NS", "SUNPHARMA.NS", "TCS.NS", "TATACONSUM.NS",
+        "TATAMOTORS.NS", "TATASTEEL.NS", "TECHM.NS", "TITAN.NS", "ULTRACEMCO.NS", "UPL.NS", "WIPRO.NS"
+    ]
+    today = datetime.today()
+    today_stock_details = StockDetails.objects.filter(date=today).order_by('-percentage_change')
+    if query:
+        filtered_stocks = [ticker for ticker in stock_names if query in ticker.upper()]
+    else:
+        filtered_stocks = []
+    stock_data = []
+    if not today_stock_details:
+        getStock()
     stock_data_sorted = sorted(stock_data, key=lambda x: x['percentage_change'], reverse=True)
     top_gainers = stock_data_sorted[:20]  
-    top_losers = stock_data_sorted[-20:]  
-    
+    top_losers = stock_data_sorted[-20:] 
     context = {
             'filtered_stocks': filtered_stocks,
-            'top_gainers': top_gainers,
-            'top_losers': top_losers,
+            'top_gainers': today_stock_details,
+            
         }
     return render(request, 'home.html', context)
 
