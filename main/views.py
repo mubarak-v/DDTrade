@@ -6,6 +6,12 @@ import urllib
 import base64
 from datetime import datetime, timedelta
 from .models import Stock, StockDetails
+from django.shortcuts import render
+from django.http import JsonResponse
+from .stock_name import save_stock_data_to_db
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
 
 def getStock():
     today = datetime.today()
@@ -45,6 +51,9 @@ def getStock():
         print(f"Error processing stocks: {e}")
     
 def home(request):
+    s = Stock.objects.all()
+    for stock in s:
+        print(stock.name)
     query = request.GET.get('ticker', '').strip().upper()
     stock_names = [
         "ADANIPORTS.NS", "APOLLOHOSP.NS", "ASIANPAINT.NS", "AXISBANK.NS", "BAJAJ-AUTO.NS", "BAJFINANCE.NS",
@@ -135,4 +144,13 @@ def stock(request):
 
 
 
+def fetch_and_save_stocks(request):
+    # Initialize the Chrome driver
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+    driver.get("https://www.tickertape.in/screener/equity")
 
+    try:
+        save_stock_data_to_db(driver)
+        return JsonResponse({"status": "success", "message": "Stock data saved successfully!"})
+    finally:
+        driver.quit()
