@@ -2,11 +2,9 @@ import yfinance as yf
 import matplotlib.pyplot as plt
 from django.shortcuts import render
 import io
-import urllib
 import base64
 from datetime import datetime, timedelta
 from .models import Stock, StockDetails
-from django.shortcuts import render
 from django.http import JsonResponse
 from .stock_name import save_stock_data_to_db
 from selenium import webdriver
@@ -16,15 +14,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 def getStock():
     today = datetime.today()
     start_date = today - timedelta(days=30)
-    stock_names = [
-        "ADANIPORTS.NS", "APOLLOHOSP.NS", "ASIANPAINT.NS", "AXISBANK.NS", "BAJAJ-AUTO.NS", "BAJFINANCE.NS",
-        "BAJAJFINSV.NS", "BPCL.NS", "BHARTIARTL.NS", "BRITANNIA.NS", "CIPLA.NS", "COALINDIA.NS", "DIVISLAB.NS",
-        "DRREDDY.NS", "EICHERMOT.NS", "GRASIM.NS", "HCLTECH.NS", "HDFCBANK.NS", "HDFCLIFE.NS", "HEROMOTOCO.NS",
-        "HINDALCO.NS", "HINDUNILVR.NS", "HDFC.NS", "ICICIBANK.NS", "ITC.NS", "INDUSINDBK.NS", "INFY.NS",
-        "JSWSTEEL.NS", "KOTAKBANK.NS", "LT.NS", "M&M.NS", "MARUTI.NS", "NTPC.NS", "NESTLEIND.NS", "ONGC.NS",
-        "POWERGRID.NS", "RELIANCE.NS", "SBILIFE.NS", "SBIN.NS", "SUNPHARMA.NS", "TCS.NS", "TATACONSUM.NS",
-        "TATAMOTORS.NS", "TATASTEEL.NS", "TECHM.NS", "TITAN.NS", "ULTRACEMCO.NS", "UPL.NS", "WIPRO.NS"
-    ]
+    stock_names = list(Stock.objects.values_list('yfinance_name', flat=True))
     start_date = today - timedelta(days=60)
     try:
         for ticker in stock_names:
@@ -55,15 +45,8 @@ def home(request):
     for stock in s:
         print(stock.name)
     query = request.GET.get('ticker', '').strip().upper()
-    stock_names = [
-        "ADANIPORTS.NS", "APOLLOHOSP.NS", "ASIANPAINT.NS", "AXISBANK.NS", "BAJAJ-AUTO.NS", "BAJFINANCE.NS",
-        "BAJAJFINSV.NS", "BPCL.NS", "BHARTIARTL.NS", "BRITANNIA.NS", "CIPLA.NS", "COALINDIA.NS", "DIVISLAB.NS",
-        "DRREDDY.NS", "EICHERMOT.NS", "GRASIM.NS", "HCLTECH.NS", "HDFCBANK.NS", "HDFCLIFE.NS", "HEROMOTOCO.NS",
-        "HINDALCO.NS", "HINDUNILVR.NS", "HDFC.NS", "ICICIBANK.NS", "ITC.NS", "INDUSINDBK.NS", "INFY.NS",
-        "JSWSTEEL.NS", "KOTAKBANK.NS", "LT.NS", "M&M.NS", "MARUTI.NS", "NTPC.NS", "NESTLEIND.NS", "ONGC.NS",
-        "POWERGRID.NS", "RELIANCE.NS", "SBILIFE.NS", "SBIN.NS", "SUNPHARMA.NS", "TCS.NS", "TATACONSUM.NS",
-        "TATAMOTORS.NS", "TATASTEEL.NS", "TECHM.NS", "TITAN.NS", "ULTRACEMCO.NS", "UPL.NS", "WIPRO.NS"
-    ]
+    stock_names = list(Stock.objects.values_list('yfinance_name', flat=True))
+
     today = datetime.today()
     today_stock_details = StockDetails.objects.filter(date=today).order_by('-percentage_change')
     if query:
