@@ -37,7 +37,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'main'
+    'main',
+    'user_management'
 ]
 
 MIDDLEWARE = [
@@ -55,7 +56,7 @@ ROOT_URLCONF = 'DDTrade.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR /'main/template/main'],
+        'DIRS': [BASE_DIR /'main/template/main',BASE_DIR /'user_management/template/user_management'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
