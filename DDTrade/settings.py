@@ -52,6 +52,9 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'DDTrade.urls'
+AUTH_USER_MODEL = 'user_management.AccountDetails'
+LOGOUT_REDIRECT_URL = '/'  
+
 
 TEMPLATES = [
     {
