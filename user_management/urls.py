@@ -8,7 +8,7 @@ urlpatterns = [
     path('holding/', views.holdings, name=  'holdings'),
     path('login/', views.login_view, name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
-    # path('wallet/', views.wallet, name='wallet')
+    path('wallet/', views.wallet, name='wallet')
 
     
 

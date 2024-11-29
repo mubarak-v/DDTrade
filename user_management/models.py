@@ -9,6 +9,23 @@ import uuid
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils.translation import gettext_lazy as _
 
+
+def generate_transaction_id():
+
+    # Check if there are any transactions
+    last_transaction = TransactionDetails.objects.order_by('-created_at').first()
+
+    if last_transaction:
+        # Increment the last transaction ID
+        new_id = int(last_transaction.transaction_id) + 1
+    else:
+        # Start from a base value if no transactions exist
+        new_id = 1000000000
+
+    return str(new_id)
+
+
+# Generate a 10-digit number
 class AccountDetailsManager(BaseUserManager):
     def create_user(self, email, username, password=None, **extra_fields):
         if not email:
@@ -55,14 +72,42 @@ class TransactionDetails(models.Model):
         ('transfer', 'Transfer'),
         ('purchase', 'Purchase'),
     ]
-    transaction_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    amount = models.DecimalField(max_digits=10000000, decimal_places=2)
+    transaction_id = models.CharField(
+        max_length=10,
+        unique=True,
+        default=generate_transaction_id,
+        editable=False
+    )
+    amount = models.DecimalField(max_digits=12, decimal_places=2)  # Adjust max_digits
     Wallet = models.ForeignKey(Wallet, null=True, blank=True, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
-    
+
     def __str__(self):
-        return f"Transaction {self.transaction_id} - {self.transaction_type} ({self.status})"
+        return f"Transaction {self.transaction_id} - {self.transaction_type}"
 
     class Meta:
         ordering = ['-created_at']
+
+class HoldingStockStore(models.Model):
+    stock_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)  # Unique identifier for the stock
+    stock_name = models.CharField(max_length=255)  # Name of the stock
+    quantity = models.PositiveIntegerField(default=0)  # Quantity of stocks held
+    invested_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)  # Total invested amount
+    current_value = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)  # Current market value
+    created_at = models.DateTimeField(auto_now_add=True)  # Timestamp for when the record was created
+    updated_at = models.DateTimeField(auto_now=True)  # Timestamp for when the record was last updated
+    wallet = models.ForeignKey(
+        Wallet,
+        on_delete=models.CASCADE,
+        related_name="holding_stocks"
+    )  # Relationship with the wallet
+
+    def __str__(self):
+        return f"{self.stock_name} - {self.quantity} shares"
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Holding Stock"
+        verbose_name_plural = "Holding Stocks"
+

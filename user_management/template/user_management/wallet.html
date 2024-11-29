@@ -30,56 +30,26 @@
         <div class="flex justify-between mb-2">
           <div>
             <span class="text-gray-400 text-sm">Total Amount</span>
-            <div class="text-xl font-semibold">$12,345.67</div>
+            <div class="text-xl font-semibold"> {{ wallets.amount }} </div>
           </div>
         </div>
       </div>
 
-      <div class="bg-gray-800 p-4 rounded-lg mb-4">
-        <div class="flex justify-between items-center mb-2">
-          <div class="text-sm text-gray-400">Date: 2023-10-01</div>
-          <div class="text-green-500 text-sm">Completed</div>
-        </div>
-        <div class="flex justify-between items-center mb-2">
-          <div class="text-lg font-semibold">Transaction ID: 123456</div>
-        </div>
-      </div>
-      <div class="bg-gray-800 p-4 rounded-lg mb-4">
-        <div class="flex justify-between items-center mb-2">
-          <div class="text-sm text-gray-400">Date: 2023-10-05</div>
-          <div class="text-red-500 text-sm">Failed</div>
-        </div>
-        <div class="flex justify-between items-center mb-2">
-          <div class="text-lg font-semibold">Transaction ID: 789012</div>
-        </div>
-      </div>
-      <div class="bg-gray-800 p-4 rounded-lg mb-4">
-        <div class="flex justify-between items-center mb-2">
-          <div class="text-sm text-gray-400">Date: 2023-10-10</div>
-          <div class="text-green-500 text-sm">Completed</div>
-        </div>
-        <div class="flex justify-between items-center mb-2">
-          <div class="text-lg font-semibold">Transaction ID: 345678</div>
-        </div>
-      </div>
-      <div class="bg-gray-800 p-4 rounded-lg mb-4">
-        <div class="flex justify-between items-center mb-2">
-          <div class="text-sm text-gray-400">Date: 2023-10-15</div>
-          <div class="text-yellow-500 text-sm">Pending</div>
-        </div>
-        <div class="flex justify-between items-center mb-2">
-          <div class="text-lg font-semibold">Transaction ID: 901234</div>
-        </div>
-      </div>
-      <div class="bg-gray-800 p-4 rounded-lg mb-4">
-        <div class="flex justify-between items-center mb-2">
-          <div class="text-sm text-gray-400">Date: 2023-10-20</div>
-          <div class="text-green-500 text-sm">Completed</div>
-        </div>
-        <div class="flex justify-between items-center mb-2">
-          <div class="text-lg font-semibold">Transaction ID: 567890</div>
-        </div>
-      </div>
+
+{% for transaction  in transactions %}
+<div class="bg-gray-800 p-4 rounded-lg mb-4">
+  <div class="flex justify-between items-center mb-2">
+    <div class="text-sm text-gray-400">Date: {{transaction.created_at}} </div>
+    <div class="text-green-500 text-sm">Completed</div>
+  </div>
+  <div class="flex justify-between items-center mb-2">
+    <div class="text-lg font-semibold">Transaction ID: {{transaction.transaction_id}} </div>
+    <div class="text-lg font-semibold">Transaction Amount: {{transaction.amount}} </div>
+
+  </div>
+</div>
+{% endfor %}
+
     </div>
     <div
       class="fixed bottom-0 left-0 right-0 bg-gray-800 p-4 flex justify-around items-center"
