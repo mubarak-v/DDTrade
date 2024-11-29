@@ -46,4 +46,23 @@ class Wallet(models.Model):
     Wallet_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     amount = models.DecimalField(max_digits=10000000,decimal_places=2,default=0.00)
     account = models.ForeignKey(AccountDetails, on_delete=models.CASCADE, related_name="wallet")
+# transaction
+
+class TransactionDetails(models.Model):
+    TRANSACTION_TYPES = [
+        ('deposit', 'Deposit'),
+        ('withdrawal', 'Withdrawal'),
+        ('transfer', 'Transfer'),
+        ('purchase', 'Purchase'),
+    ]
+    transaction_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    amount = models.DecimalField(max_digits=10000000, decimal_places=2)
+    Wallet = models.ForeignKey(Wallet, null=True, blank=True, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
     
+    def __str__(self):
+        return f"Transaction {self.transaction_id} - {self.transaction_type} ({self.status})"
+
+    class Meta:
+        ordering = ['-created_at']
