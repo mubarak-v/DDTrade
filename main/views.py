@@ -64,6 +64,7 @@ def home(request):
             'top_gainers': today_stock_details,
             
         }
+    
     return render(request, 'home.html', context)
 
 
@@ -71,56 +72,20 @@ def home(request):
 
 
 def stock(request):
-
+    today = datetime.today()
     ticker = request.GET.get('ticker', '').strip().upper()
-    if ticker:
-        stock = yf.Ticker(ticker)
-        stock_info = stock.history(period="1d")  
-        stock_info_details = stock.info
+    stockDetails = StockDetails.objects.filter(stock__yfinance_name=ticker,date=today)
+    print(stockDetails)
+    for i in stockDetails:
+        print(i.stock.name)
+    context = {
+            'stockDetails': stockDetails
 
-        fig, ax = plt.subplots(figsize=(10, 6))
-        ax.plot(stock_info.index, stock_info['Close'], label='Close Price', color='blue', lw=2)
-        ax.set_title(f"{ticker} - Stock Price for 1 Day")
-        ax.set_xlabel('Time')
-        ax.set_ylabel('Price (₹)')
-        ax.legend()
-
-        img_buf = io.BytesIO()
-        plt.savefig(img_buf, format='png')
-        img_buf.seek(0)
-        img_base64 = base64.b64encode(img_buf.read()).decode('utf-8')
-        
-        context = {
-            'stock_data': {
-                'date': stock_info.index[-1].strftime('%Y-%m-%d'),
-                'open': stock_info['Open'].iloc[0],
-                'close': round(stock_info['Close'].iloc[0], 2),
-                'high': stock_info['High'].iloc[0],
-                'low': stock_info['Low'].iloc[0],
-                'volume': stock_info['Volume'].iloc[0],
-                'ticker': ticker,
-                'market_cap': stock_info_details.get('marketCap', 'N/A'),
-                'dividend_yield': stock_info_details.get('dividendYield', 'N/A'),
-                'week_52_high': stock_info_details.get('fiftyTwoWeekHigh', 'N/A'),
-                'week_52_low': stock_info_details.get('fiftyTwoWeekLow', 'N/A'),
-                'pe_ratio': stock_info_details.get('trailingPE', 'N/A'),
-                'beta': stock_info_details.get('beta', 'N/A'),
-                'previous_close': stock_info_details.get('previousClose', 'N/A'),
-                'country': stock_info_details.get('country', 'N/A'),
-                'currency': stock_info_details.get('currency', 'N/A')
-            },
-            'graph': img_base64,
-            
         }
         
-        print("Close Price:", context['stock_data']['close'])
+   
 
-    else:
-        # If no valid ticker found, return an empty context or an error message
-        context = {
-            'error': "No stock data available for the provided search query.",
-            
-        }
+    
 
     return render(request, 'stock_details.html', context)
 
@@ -137,3 +102,11 @@ def fetch_and_save_stocks(request):
         return JsonResponse({"status": "success", "message": "Stock data saved successfully!"})
     finally:
         driver.quit()
+
+def buyStock(request):
+    
+    today = datetime.today()
+    ticker = request.GET.get('ticker', '').strip().upper()
+    stockDetails = StockDetails.objects.filter(stock__yfinance_name=ticker,date=today)
+    
+    return render(request, 'stock_details.html')

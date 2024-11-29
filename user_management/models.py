@@ -9,6 +9,8 @@ import uuid
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils.translation import gettext_lazy as _
 
+from main.models import Stock
+
 
 def generate_transaction_id():
 
@@ -89,25 +91,17 @@ class TransactionDetails(models.Model):
     class Meta:
         ordering = ['-created_at']
 
-class HoldingStockStore(models.Model):
-    stock_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)  # Unique identifier for the stock
-    stock_name = models.CharField(max_length=255)  # Name of the stock
-    quantity = models.PositiveIntegerField(default=0)  # Quantity of stocks held
-    invested_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)  # Total invested amount
-    current_value = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)  # Current market value
-    created_at = models.DateTimeField(auto_now_add=True)  # Timestamp for when the record was created
-    updated_at = models.DateTimeField(auto_now=True)  # Timestamp for when the record was last updated
-    wallet = models.ForeignKey(
-        Wallet,
-        on_delete=models.CASCADE,
-        related_name="holding_stocks"
-    )  # Relationship with the wallet
 
-    def __str__(self):
-        return f"{self.stock_name} - {self.quantity} shares"
-
-    class Meta:
-        ordering = ['-created_at']
-        verbose_name = "Holding Stock"
-        verbose_name_plural = "Holding Stocks"
-
+class HoldingStock(models.Model):
+    STATUS_CHOICES = [
+        ('buy', 'Buy'),
+        ('sell', 'Sell'),
+        ('complete', 'Complete'),
+        
+    ]
+    wallet = models.ForeignKey(Wallet,  on_delete=models.CASCADE)
+    stock = models.ForeignKey(Stock, on_delete=models.CASCADE)
+    quantity =models.CharField(max_length=20000)
+    average_price = models.DecimalField(max_digits=20, decimal_places=4, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='buy')

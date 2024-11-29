@@ -247,7 +247,9 @@
             >
               <div class="flex items-center space-x-4 w-1/2">
                 <div>
+                  <a href="{% url 'stock' %}?ticker={{ stock.stock.yfinance_name }}">
                   <div class="text-gray-100">{{ stock.stock.name}}</div>
+                </a>
                   <div class="text-gray-400 text-sm">{{ stock.ticker }}</div>
                 </div>
               </div>
