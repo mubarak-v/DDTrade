@@ -55,45 +55,16 @@
         </div>
       </div>
   
+      
+      
+      {% for stock  in holdingStock %}
       <div class="bg-gray-800 p-4 rounded-lg mb-4">
         <div class="flex justify-between items-center mb-2">
-          <div class="text-sm text-gray-400">Qty. 13 • Avg. 569.95</div>
-          <div class="text-red-500 text-sm">-13.41%</div>
-        </div>
-        <div class="flex justify-between items-center mb-2">
-          <div class="text-lg font-semibold">AMBUJACEM</div>
-          <div class="text-red-500 text-lg font-semibold">-993.85</div>
-        </div>
-        <div class="flex justify-between items-center">
-          <div class="text-sm text-gray-400">Invested 7,409.35</div>
-          <div class="text-sm text-gray-400">
-            LTP 493.50 <span class="text-red-500">(-2.29%)</span>
-          </div>
-        </div>
-      </div>
-      <div class="bg-gray-800 p-4 rounded-lg mb-4">
-        <div class="flex justify-between items-center mb-2">
-          <div class="text-sm text-gray-400">Qty. 1 • Avg. 855.60</div>
-          <div class="text-red-500 text-sm">-3.30%</div>
-        </div>
-        <div class="flex justify-between items-center mb-2">
-          <div class="text-lg font-semibold">DLF</div>
-          <div class="text-red-500 text-lg font-semibold">-28.20</div>
-        </div>
-        <div class="flex justify-between items-center">
-          <div class="text-sm text-gray-400">Invested 855.60</div>
-          <div class="text-sm text-gray-400">
-            LTP 827.40 <span class="text-green-500">(+0.47%)</span>
-          </div>
-        </div>
-      </div>
-      <div class="bg-gray-800 p-4 rounded-lg mb-4">
-        <div class="flex justify-between items-center mb-2">
-          <div class="text-sm text-gray-400">Qty. 8 • Avg. 93.98</div>
+          <div class="text-sm text-gray-400">Qty. {{stock.quantity}} • Avg. {{stock.average_price}} </div>
           <div class="text-red-500 text-sm">-14.67%</div>
         </div>
         <div class="flex justify-between items-center mb-2">
-          <div class="text-lg font-semibold">GMRINFRA</div>
+          <div class="text-lg font-semibold"> {{stock.stock.name}} </div>
           <div class="text-red-500 text-lg font-semibold">-110.32</div>
         </div>
         <div class="flex justify-between items-center">
@@ -103,6 +74,10 @@
           </div>
         </div>
       </div>
+       
+      {% endfor %}
+        
+  
       <div class="bg-gray-800 p-4 rounded-lg">
         <div class="flex justify-between items-center">
           <div class="text-sm text-gray-400">Day's P&L</div>

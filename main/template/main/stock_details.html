@@ -103,10 +103,15 @@
                   </div>
                 </div>
               </div>
+              <form method="post" action="{% url 'buyStock' %}?ticker={{ stockDetail.stock.yfinance_name }}">
+                  {% csrf_token %}
+                <input type="hidden" name="ticker" value="{{stockDetail.stock.yfinance_name  }}">
+                <button type="submit">Buy Stock</button>
+            </form>
+            
               {% endfor %}
-              <button>
-                Buy
-              </button>
+            
+              
               
           <div class="chart-container">
             <h4 class="mb-3">Stock Performance</h4>

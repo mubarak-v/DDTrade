@@ -1,13 +1,26 @@
+from datetime import datetime
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.shortcuts import redirect
+from .models import HoldingStock
+
+from main.models import StockDetails,Stock
 from .models import Wallet,TransactionDetails
 # Create your views here.   
 
 def holdings(request):
-    return render(request,'holdings.html')
+    user = request.user
+    wallets = Wallet.objects.get(account__username=user.username)
+    holdingStock = HoldingStock.objects.filter(wallet = wallets)
+    
+    context = {
+        'holdingStock':holdingStock
+    }
+    for i in holdingStock:
+        print(i.average_price)
+    return render(request,'holdings.html',context)
 
 def login_view(request):
     if request.method == 'POST':
@@ -62,3 +75,25 @@ def wallet(request):
     return render(request, 'wallet.html', context)
 
 
+def buyStock(request):
+    user = request.user
+    today = datetime.today()
+    ticker = request.GET.get('ticker', '').strip().upper()
+    wallets = Wallet.objects.get(account__username=user.username)
+    stock = Stock.objects.get(yfinance_name=ticker)
+    stockDetails = StockDetails.objects.filter(stock__yfinance_name=ticker, date=today)
+
+    closing_price = ""
+    for price in stockDetails:
+        closing_price = price.closing_price
+
+    holding = HoldingStock.objects.create(
+        wallet=wallets,
+        stock=stock,
+        quantity=1,  # Assuming you are buying 1 unit, adjust as necessary
+        average_price=closing_price,
+        status='buy',  # Marking as a "buy" action
+    )
+
+    # Redirect to 'holdings.html' or any other view
+    return redirect('holdings')
