@@ -8,15 +8,21 @@ from .models import HoldingStock
 
 from main.models import StockDetails,Stock
 from .models import Wallet,TransactionDetails
+from .utils import calculate_percentage
 # Create your views here.   
 
 def holdings(request):
     user = request.user
     wallets = Wallet.objects.get(account__username=user.username)
     holdingStock = HoldingStock.objects.filter(wallet = wallets)
+    Invested_amount= 0
+    for stock in holdingStock:
+         Invested_amount += stock.inversted_amount
+    print(Invested_amount)
     
     context = {
-        'holdingStock':holdingStock
+        'holdingStock':holdingStock,
+        'Invested_amount':Invested_amount   
     }
     for i in holdingStock:
         print(i.average_price)
@@ -86,14 +92,28 @@ def buyStock(request):
     closing_price = ""
     for price in stockDetails:
         closing_price = price.closing_price
+    holding_stock = HoldingStock.objects.filter(wallet=wallets, stock=stock, status="buy").first()
+    
 
-    holding = HoldingStock.objects.create(
-        wallet=wallets,
-        stock=stock,
-        quantity=1,  # Assuming you are buying 1 unit, adjust as necessary
-        average_price=closing_price,
-        status='buy',  # Marking as a "buy" action
-    )
+        
+    if holding_stock:
+            # Update existing holding
+            holding_stock.quantity = int(holding_stock.quantity) + 1
+            holding_stock.inversted_amount += closing_price
+            holding_stock.average_price = (
+                holding_stock.inversted_amount / holding_stock.quantity
+            )
+            holding_stock.save()
+    else:
+            # Create a new holding
+            HoldingStock.objects.create(
+                wallet=wallets,
+                stock=stock,
+                quantity=1,  # Buying 1 unit, adjust as necessary
+                average_price=closing_price,
+                status='buy',  # Marking as a "buy" action
+                inversted_amount=closing_price
+            )
 
     # Redirect to 'holdings.html' or any other view
     return redirect('holdings')
