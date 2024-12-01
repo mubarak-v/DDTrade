@@ -22,7 +22,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('main.urls')),  # Include the main app's URL configuration.
-    path('account/', include('user_management.urls')), 
+    path('account/', include('user_management.urls'), ), 
 ]
 
 # Serve static and media files in development

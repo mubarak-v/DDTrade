@@ -107,3 +107,9 @@ class HoldingStock(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='buy')
     inversted_amount = models.DecimalField(max_digits=10000000, decimal_places=2,default=0 )
     current_price = models.DecimalField(max_digits=10000000, decimal_places=2, default=0)
+# inversted_amount
+class InverstedAmount(models.Model):
+    Wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)
+    inversted_amount = models.DecimalField(max_digits=10000000, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+    current_amount = models.DecimalField(max_digits=10000000,decimal_places=2)

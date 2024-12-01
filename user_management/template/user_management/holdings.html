@@ -1,5 +1,7 @@
+{% load stock_filters %}
 <html>
   <head>
+   
     <script src="https://cdn.tailwindcss.com"></script>
     <link
       rel="stylesheet"
@@ -61,16 +63,28 @@
       <div class="bg-gray-800 p-4 rounded-lg mb-4">
         <div class="flex justify-between items-center mb-2">
           <div class="text-sm text-gray-400">Qty. {{stock.quantity}} • Avg. {{stock.average_price}} </div>
-          <div class="text-red-500 text-sm">-14.67%</div>
+          
+          {% calculate_percentage stock.current_price stock.average_price as percentage_change %}
+<div class="text-sm {% if percentage_change >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
+    {{ percentage_change }}%
+</div>
         </div>
         <div class="flex justify-between items-center mb-2">
           <div class="text-lg font-semibold"> {{stock.stock.name}} </div>
-          <div class="text-red-500 text-lg font-semibold">-110.32</div>
+          
+
+          <div class="text-red-500 text-lg font-semibold">           {% calculate_profit_or_loss stock.current_price stock.average_price stock.quantity %}
+
+
+
+          </div>
         </div>
         <div class="flex justify-between items-center">
           <div class="text-sm text-gray-400">Invested {{stock.inversted_amount}} </div>
+          {%  get_stock_price_difference stock.stock.yfinance_name as stock_diff %}
           <div class="text-sm text-gray-400">
-            LTP 80.19 <span class="text-green-500">(+0.17%)</span>
+            
+            LTP {{stock.current_price}} <span class="text-green-500 {% if stock_diff >= 0 %}text-green-500{% else %}text-red-500{% endif %}">( {{stock_diff}} %)</span>
           </div>
         </div>
       </div>

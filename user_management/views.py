@@ -1,4 +1,5 @@
 from datetime import datetime
+from decimal import Decimal
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -8,7 +9,7 @@ from .models import HoldingStock
 
 from main.models import StockDetails,Stock
 from .models import Wallet,TransactionDetails
-from .utils import calculate_percentage
+from .utils import calculate_percentage, calculate_profit_or_loss
 # Create your views here.   
 
 def holdings(request):
@@ -19,10 +20,12 @@ def holdings(request):
     for stock in holdingStock:
          Invested_amount += stock.inversted_amount
     print(Invested_amount)
+
     
     context = {
         'holdingStock':holdingStock,
-        'Invested_amount':Invested_amount   
+        'Invested_amount':Invested_amount , 
+        'calculate_profit_or_loss':calculate_profit_or_loss 
     }
     for i in holdingStock:
         print(i.average_price)
@@ -52,17 +55,7 @@ def wallet(request):
         # Take the first wallet
         wallet = wallets.first()
 
-        # Deposit 500 to the wallet
-        wallet.amount += 500
-        wallet.save()
-
-        # Log the transaction
-        transaction = TransactionDetails.objects.create(
-            Wallet=wallet,
-            amount=500,
-            transaction_type='deposit'
-        )
-        print(f"Transaction logged: {transaction.transaction_id}")
+        
 
         # Fetch all transactions for this wallet
         transactions = TransactionDetails.objects.filter(Wallet=wallet)
@@ -101,8 +94,11 @@ def buyStock(request):
             holding_stock.quantity = int(holding_stock.quantity) + 1
             holding_stock.inversted_amount += closing_price
             holding_stock.average_price = (
-                holding_stock.inversted_amount / holding_stock.quantity
+            holding_stock.inversted_amount / holding_stock.quantity
+             
+
             )
+            holding_stock.current_price = closing_price
             holding_stock.save()
     else:
             # Create a new holding
@@ -112,8 +108,64 @@ def buyStock(request):
                 quantity=1,  # Buying 1 unit, adjust as necessary
                 average_price=closing_price,
                 status='buy',  # Marking as a "buy" action
-                inversted_amount=closing_price
+                inversted_amount=closing_price,
+                current_price = closing_price
             )
 
     # Redirect to 'holdings.html' or any other view
     return redirect('holdings')
+
+from django.shortcuts import redirect
+from django.contrib import messages
+from .models import Wallet, TransactionDetails
+
+from decimal import Decimal, InvalidOperation
+
+def transaction(request):
+    print("functin working....")
+    if request.method == 'POST':  # Ensure we process only POST requests
+        transactionType = request.POST.get('transaction', '')
+        amount = request.POST.get('amount', '').strip()  # Strip whitespace from input
+
+        print(f"Transaction: {transactionType}, Amount: {amount}")
+
+        try:
+            # Validate and convert the amount to Decimal
+            amount = Decimal(amount)
+            if amount <= 0:
+                messages.error(request, 'The amount must be greater than zero.')
+                return redirect("wallet")
+
+            user = request.user
+            wallet = Wallet.objects.get(account__username=user)
+
+            if transactionType == 'deposit':
+                print(f"Deposit: {amount}")
+                wallet.amount += amount
+                wallet.save()
+                TransactionDetails.objects.create(
+                    Wallet=wallet,
+                    amount=amount,
+                    transaction_type='deposit'
+                )
+                return redirect("wallet")
+
+            elif transactionType == 'withdrawal':
+                if wallet.amount >= amount:
+                    wallet.amount -= amount
+                    wallet.save()
+                    TransactionDetails.objects.create(
+                        Wallet=wallet,
+                        amount=amount,
+                        transaction_type='withdrawal'
+                    )
+                    return redirect("wallet")
+                else:
+                    messages.error(request, 'Insufficient funds')
+        except InvalidOperation:
+            messages.error(request, 'Invalid amount entered. Please enter a valid number.')
+        except Wallet.DoesNotExist:
+            messages.error(request, 'Wallet not found')
+
+    # Redirect to a fallback page or wallet overview in case of an error
+    return redirect("wallet")
