@@ -1,4 +1,6 @@
 {% load stock_filters %}
+{% load custom_filters %}
+
 <html>
   <head>
    
@@ -72,8 +74,10 @@
         <div class="flex justify-between items-center mb-2">
           <div class="text-lg font-semibold"> {{stock.stock.name}} </div>
           
+          {% calculate_profit_or_loss stock.current_price stock.average_price stock.quantity as PandL %}
+          <div class="{% if PandL >= 0 %}text-green-500{% else %}text-red-500{% endif %} text-lg font-semibold">  {{ PandL|flot }}
 
-          <div class="text-red-500 text-lg font-semibold">           {% calculate_profit_or_loss stock.current_price stock.average_price stock.quantity %}
+      
 
 
 

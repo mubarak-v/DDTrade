@@ -1,6 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 from django.contrib.auth import authenticate, login
+from django.forms import ValidationError
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import logout
@@ -81,12 +82,13 @@ def buyStock(request):
     wallets = Wallet.objects.get(account__username=user.username)
     stock = Stock.objects.get(yfinance_name=ticker)
     stockDetails = StockDetails.objects.filter(stock__yfinance_name=ticker, date=today)
-
+    
     closing_price = ""
     for price in stockDetails:
         closing_price = price.closing_price
     holding_stock = HoldingStock.objects.filter(wallet=wallets, stock=stock, status="buy").first()
-    
+    wallets.amount -= closing_price
+    wallets.save()  # save                            
 
         
     if holding_stock:
