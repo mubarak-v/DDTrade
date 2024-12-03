@@ -23,13 +23,14 @@ def home(request):
     stock_names = list(Stock.objects.values_list('yfinance_name', flat=True))
 
     today = datetime.today()
+    print(today)
     today_stock_details = StockDetails.objects.filter(date=today).order_by('-percentage_change')
     if query:
         filtered_stocks = [ticker for ticker in stock_names if query in ticker.upper()]
     else:
         filtered_stocks = []
     stock_data = []
-    if not today_stock_details:
+    if not today_stock_details and datetime.now().time() > datetime.strptime("15:35", "%H:%M").time():
         getStock()
     stock_data_sorted = sorted(stock_data, key=lambda x: x['percentage_change'], reverse=True)
     top_gainers = stock_data_sorted[:20]  

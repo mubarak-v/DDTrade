@@ -1,6 +1,7 @@
 {% load stock_filters %}
 {% load custom_filters %}
 
+
 <html>
   <head>
    
@@ -20,9 +21,55 @@
       crossorigin="anonymous"
     />
     <style>
+      .transaction-container {
+            width: 100%;
+            max-width: 400px;
+            position: relative;
+        }
+        .hover-trigger {
+            background-color: #2d3748;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .hover-popup {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            color: black;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 10;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        .hover-trigger:hover .hover-popup {
+            display: block;
+        }
       body {
         font-family: "Roboto", sans-serif;
       }
+      .pop {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #2d3748;
+  color: white;
+  width: 100%;
+  z-index: 10;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.bg-gray-800:hover .pop {
+  display: block;
+}
     </style>
   </head>
   <body class="container bg-gray-900 text-white">
@@ -61,39 +108,77 @@
   
       
       
-      {% for stock  in holdingStock %}
-      <div class="bg-gray-800 p-4 rounded-lg mb-4">
+      {% for stock in holdingStock %}
+      <div class="bg-gray-800 p-4 rounded-lg mb-4 relative">
         <div class="flex justify-between items-center mb-2">
-          <div class="text-sm text-gray-400">Qty. {{stock.quantity}} • Avg. {{stock.average_price}} </div>
+          <div class="text-sm text-gray-400">Qty. {{ stock.quantity }} • Avg. {{ stock.average_price }}</div>
           
           {% calculate_percentage stock.current_price stock.average_price as percentage_change %}
-<div class="text-sm {% if percentage_change >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
-    {{ percentage_change }}%
-</div>
+          <div class="text-sm {% if percentage_change >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
+            {{ percentage_change }}%
+          </div>
         </div>
         <div class="flex justify-between items-center mb-2">
-          <div class="text-lg font-semibold"> {{stock.stock.name}} </div>
+          <div class="text-lg font-semibold">{{ stock.stock.name }}</div>
           
           {% calculate_profit_or_loss stock.current_price stock.average_price stock.quantity as PandL %}
-          <div class="{% if PandL >= 0 %}text-green-500{% else %}text-red-500{% endif %} text-lg font-semibold">  {{ PandL|flot }}
-
-      
-
-
-
+          <div class="{% if PandL >= 0 %}text-green-500{% else %}text-red-500{% endif %} text-lg font-semibold">
+            {{ PandL|flot }}
           </div>
         </div>
         <div class="flex justify-between items-center">
-          <div class="text-sm text-gray-400">Invested {{stock.inversted_amount}} </div>
-          {%  get_stock_price_difference stock.stock.yfinance_name as stock_diff %}
+          <div class="text-sm text-gray-400">Invested {{ stock.inversted_amount }}</div>
+          {% get_stock_price_difference stock.stock.yfinance_name as stock_diff %}
           <div class="text-sm text-gray-400">
-            
-            LTP {{stock.current_price}} <span class="text-green-500 {% if stock_diff >= 0 %}text-green-500{% else %}text-red-500{% endif %}">( {{stock_diff}} %)</span>
+            LTP {{ stock.current_price }} 
+            <span class="{% if stock_diff >= 0 %}text-green-500{% else %}text-red-500{% endif %}">
+              ({{ stock_diff }}%)
+            </span>
+          </div>
+        </div>
+      
+        <!-- Pop Div -->
+        <div  style="width: 500px; margin-top: -100px;" class="pop">
+          <div  class="bg-gray-800 p-4 ">
+            <div class="flex justify-between items-center mb-4">
+              <div>
+                <h1 class="text-xl font-semibold">{{ stock.stock.name }}</h1>
+                <p class="text-gray-400">
+                  <!-- NSE  -->
+                  <span class="text-green-500">{{ stock.current_price }} </span> 
+                  {% calculate_diff stock.current_price stock.average_price as calculate_diff %}
+                  <span class="text-gray-400 {% if calculate_diff >= 0 %}text-green-500{% else %}text-red-500{% endif %}"> 
+                  
+                    
+               
+                    ( {{calculate_diff}},   {{ PandL|flot }}%)</span>
+                </p>
+              </div>
+            </div>
+            <div class="flex justify-between items-center mb-4">
+
+              <form action="{% url 'buyStock' %}?ticker={{ stock.stock.yfinance_name }}" method="post" class="w-80">
+                {% csrf_token %}
+                <input name="ticker" type="hidden" value="{{ stock.stock.yfinance_name }}"/>
+                <button type="submit" class="bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg w-1/2 mr-2">BUY</button>
+
+            </form>
+            <form action="{% url 'sellStock' %}?ticker={{ stock.stock.yfinance_name }}" method="post" class="w-80">
+              {% csrf_token %}
+              <input name="ticker" type="hidden" value="{{ stock.stock.yfinance_name }}"/>
+              <button type="submit" class="bg-red-500 text-white font-semibold py-2 px-4 rounded-lg w-1/2 ml-2">SELL</button>
+
+          </form>
+            </div>
+            <div class="flex items-center justify-center text-blue-500">
+              <i class="fas fa-chart-bar mr-2"></i>
+              <a href="#" class="text-blue-500">View chart <i class="fas fa-arrow-right"></i></a>
+            </div>
           </div>
         </div>
       </div>
-       
       {% endfor %}
+      
         
   
       <div class="bg-gray-800 p-4 rounded-lg">

@@ -40,6 +40,16 @@ def calculate_percentage(current_price, average_price, decimals=2):
         return round(percentage_change, decimals)
     except (ValueError, TypeError):
         return None
+@register.simple_tag
+def calculate_diff(current_price, average_price, decimals=2):
+    try:
+        if average_price == 0:
+            return None  # Avoid division by zero
+        diff = current_price - average_price
+        return round(diff, decimals)
+    except (ValueError, TypeError):
+        return None
+
 
 @register.simple_tag
 def get_stock_price_difference(stock_name):

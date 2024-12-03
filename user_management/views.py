@@ -1,12 +1,13 @@
 from datetime import datetime
-from decimal import Decimal
 from django.contrib.auth import authenticate, login
 from django.forms import ValidationError
+from django.http import HttpResponse
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.shortcuts import redirect
 from .models import HoldingStock
+from decimal import Decimal, InvalidOperation
 
 from main.models import StockDetails,Stock
 from .models import Wallet,TransactionDetails
@@ -28,8 +29,7 @@ def holdings(request):
         'Invested_amount':Invested_amount , 
         'calculate_profit_or_loss':calculate_profit_or_loss 
     }
-    for i in holdingStock:
-        print(i.average_price)
+    
     return render(request,'holdings.html',context)
 
 def login_view(request):
@@ -76,6 +76,7 @@ def wallet(request):
 
 
 def buyStock(request):
+    print("buy")
     user = request.user
     today = datetime.today()
     ticker = request.GET.get('ticker', '').strip().upper()
@@ -116,12 +117,54 @@ def buyStock(request):
 
     # Redirect to 'holdings.html' or any other view
     return redirect('holdings')
+def sellStock(request):
+    from datetime import datetime  # Ensure you import datetime if not already
+    user = request.user
+    today = datetime.today()
+    ticker = request.GET.get('ticker', '').strip().upper()
+    
+    # Fetch user wallet and stock details
+    wallets = Wallet.objects.get(account__username=user.username)
+    stock = Stock.objects.get(yfinance_name=ticker)
+    stockDetails = StockDetails.objects.filter(stock__yfinance_name=ticker, date=today)
+    
+    # Fetch the closing price
+    closing_price = None
+    for price in stockDetails:
+        closing_price = price.closing_price
+    
+    if closing_price is None:
+        # Handle case where closing price is not available
+        return HttpResponse("Stock closing price not found for today.", status=400)
+    
+    # Check if the user holds the stock
+    holding_stock = HoldingStock.objects.filter(wallet=wallets, stock=stock, status="buy").first()
+    
+    if not holding_stock or int(holding_stock.quantity) <= 0:  # Convert quantity to int
+        # Handle case where no stock is available to sell
+        return HttpResponse("You do not have this stock to sell.", status=400)
+    
+    # Add the sale amount to wallet
+    wallets.amount += closing_price
+    wallets.save()
+    
+    # Update or remove the holding
+    holding_stock.quantity = int(holding_stock.quantity) - 1  # Convert to int before subtraction
+    holding_stock.inversted_amount -= closing_price
+    
+    if holding_stock.quantity == 0:
+        # If all stocks are sold, delete the record
+        holding_stock.delete()
+    else:
+        # Update the record for remaining holdings
+        holding_stock.current_price = closing_price
+        holding_stock.save()
+    
+    # Redirect to holdings or any other view
+    return redirect('holdings')
 
-from django.shortcuts import redirect
-from django.contrib import messages
-from .models import Wallet, TransactionDetails
 
-from decimal import Decimal, InvalidOperation
+
 
 def transaction(request):
     print("functin working....")
