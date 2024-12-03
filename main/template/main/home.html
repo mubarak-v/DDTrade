@@ -75,8 +75,8 @@
           width="50"
         />
         <div class="ml-4">
-          <h2 class="text-xl font-semibold">Ghulam</h2>
-          <p class="text-sm text-gray-400">Product Designer</p>
+          <h2 class="text-xl font-semibold"> {{request.user|capfirst}} </h2>
+          <p class="text-sm text-gray-400"> 123456789 </p>
         </div>
       </div>
       <nav>
@@ -93,7 +93,7 @@
           <li class="mb-4">
             <a
               class="flex items-center text-gray-400 hover:text-white"
-              href="#"
+              href="{% url 'wallet' %}"
             >
               <i class="fas fa-wallet mr-3"> </i>
               My Wallet
@@ -111,10 +111,11 @@
           <li class="mb-4">
             <a
               class="flex items-center text-gray-400 hover:text-white"
-              href="#"
+              href="{% url 'holdings' %}"
             >
               <i class="fas fa-coins mr-3"> </i>
-              Crypto
+              Portfolio
+
             </a>
           </li>
           <li class="mb-4">
@@ -126,24 +127,33 @@
               Exchange
             </a>
           </li>
+            {% if user.is_authenticated %}
+                <li class="mb-4">
+                
+                  <form action="{% url 'logout' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="flex items-center text-gray-400 hover:text-white">
+                      <i class="fas fa-sign-out-alt mr-3"></i>
+                      Logout
+                    </button>
+                  </form>
+                </li>
+          {% else %}
+       
+
+
           <li class="mb-4">
-            <a
-              class="flex items-center text-gray-400 hover:text-white"
-              href="#"
-            >
-              <i class="fas fa-cog mr-3"> </i>
-              Setting
+            <a class="flex items-center text-gray-400 hover:text-white" href="{% url 'login' %}">
+              <i class="fas fa-sign-in-alt mr-3"></i>
+              Login
             </a>
           </li>
+          {% endif %}
+
         </ul>
       </nav>
       <div class="mt-auto">
-        <div class="flex items-center p-4 bg-gray-800 rounded-lg">
-          <i class="fas fa-history text-green-500 mr-3"> </i>
-          <div>
-            <p class="text-sm">History available</p>
-          </div>
-        </div>
+      
       </div>
     </div>
     <!-- Main Content -->
@@ -247,7 +257,9 @@
             >
               <div class="flex items-center space-x-4 w-1/2">
                 <div>
+                  <a href="{% url 'stock' %}?ticker={{ stock.stock.yfinance_name }}">
                   <div class="text-gray-100">{{ stock.stock.name}}</div>
+                </a>
                   <div class="text-gray-400 text-sm">{{ stock.ticker }}</div>
                 </div>
               </div>
