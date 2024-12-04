@@ -6,7 +6,7 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.shortcuts import redirect
-from .models import HoldingStock
+from .models import HoldingStock, StockTransaction
 from decimal import Decimal, InvalidOperation
 
 from main.models import StockDetails,Stock
@@ -91,7 +91,14 @@ def buyStock(request):
     wallets.amount -= closing_price
     wallets.save()  # save                            
 
-        
+    def createTransaction():
+        stockTransaction = StockTransaction.objects.create(
+            wallet=wallets,
+            stock=stock,
+            transaction_type='buy',
+            quantity =1, 
+            price=closing_price,
+        )
     if holding_stock:
             # Update existing holding
             holding_stock.quantity = int(holding_stock.quantity) + 1
@@ -103,6 +110,7 @@ def buyStock(request):
             )
             holding_stock.current_price = closing_price
             holding_stock.save()
+            createTransaction()
     else:
             # Create a new holding
             HoldingStock.objects.create(
@@ -114,6 +122,7 @@ def buyStock(request):
                 inversted_amount=closing_price,
                 current_price = closing_price
             )
+            createTransaction()
 
     # Redirect to 'holdings.html' or any other view
     return redirect('holdings')
