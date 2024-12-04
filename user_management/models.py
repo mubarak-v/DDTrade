@@ -12,10 +12,18 @@ from django.utils.translation import gettext_lazy as _
 from main.models import Stock
 
 
-def generate_transaction_id():
+def generate_transaction_id(model_class):
+    """
+    Generates a new transaction ID based on the latest record in the specified model class.
 
-    # Check if there are any transactions
-    last_transaction = TransactionDetails.objects.order_by('-created_at').first()
+    Args:
+        model_class (models.Model): The Django model class to query (e.g., StockTransaction or TransactionDetails).
+
+    Returns:
+        str: A new unique transaction ID.
+    """
+    # Check if there are any transactions for the given model class
+    last_transaction = model_class.objects.order_by('-created_at').first()
 
     if last_transaction:
         # Increment the last transaction ID
@@ -25,6 +33,7 @@ def generate_transaction_id():
         new_id = 1000000000
 
     return str(new_id)
+
 
 
 # Generate a 10-digit number
@@ -77,7 +86,7 @@ class TransactionDetails(models.Model):
     transaction_id = models.CharField(
         max_length=10,
         unique=True,
-        default=generate_transaction_id,
+        default=lambda: generate_transaction_id(TransactionDetails),
         editable=False
     )
     amount = models.DecimalField(max_digits=12, decimal_places=2)  # Adjust max_digits
@@ -118,3 +127,12 @@ class InverstedAmount(models.Model):
     inversted_amount = models.DecimalField(max_digits=10000000, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
     current_amount = models.DecimalField(max_digits=10000000,decimal_places=2)
+
+class StockTransaction(models.Model):
+    transaction_id = models.BigIntegerField(unique=True, editable=False,default=lambda: generate_transaction_id(StockTransaction) )    
+    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name='StockTransaction')
+    stock = models.ForeignKey(Stock, on_delete=models.CASCADE)
+    transaction_type = models.CharField(max_length=20, choices=[('buy', 'Buy'), ('sell', 'Sell')])
+    quantity = models.PositiveIntegerField()
+    price = models.DecimalField(max_digits=100, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)

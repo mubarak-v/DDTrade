@@ -38,7 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'main',
-    'user_management'
+    'user_management',
+    'algo'
 ]
 
 MIDDLEWARE = [
@@ -59,7 +60,7 @@ LOGOUT_REDIRECT_URL = '/'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR /'main/template/main',BASE_DIR /'user_management/template/user_management'],
+        'DIRS': [BASE_DIR /'main/template/main',BASE_DIR /'user_management/template/user_management', BASE_DIR /'algo/template/algo'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
