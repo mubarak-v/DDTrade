@@ -1,189 +1,174 @@
 <html>
   <head>
-    <script src="https://cdn.tailwindcss.com"></script>
+   
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
     />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap"
-      rel="stylesheet"
-    />
+  
     <style>
-      body {
-        font-family: "Roboto", sans-serif;
-      }
+    
     </style>
   </head>
-  <body style="margin-left: 8%; margin-right: 8%;" class=" bg-gray-900 text-white">
-    <div class="p-4">
-      <div class="mb-4">
-        <h1 class="text-2xl font-bold">Wallet</h1>
-        <div class="flex space-x-4 mt-2">
-          <!-- <div class="flex items-center space-x-1">
-            <span class="text-blue-500">Transactions</span>
-            <span class="bg-blue-500 text-white rounded-full px-2"> 5</span>
-          </div> -->
-        </div>
-      </div>
-      <div class="bg-gray-800 p-4 rounded-lg mb-4">
-        <div class="flex justify-between mb-2">
-          <div>
-            <span class="text-gray-400 text-sm">Total Amount</span>
-            <div class="text-xl font-semibold">{{ wallets.amount }}</div>
-          </div>
-          <div class="flex space-x-2">
-            <button id="addFundsBtn" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
-                Add Funds
-            </button>
-            <button id="withdrawFundsBtn" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
-                Withdraw
-            </button>
-        </div>
-        </div>
-      </div>
+
+</html>
 
 
-      {% for transaction in transactions %}
-      <div class="bg-gray-800 p-4 rounded-lg mb-4">
-        <div class="flex justify-between items-center mb-2">
-          <div class="text-sm text-gray-400">Date: {{ transaction.created_at }}</div>
-          <div class="text-green-500 text-sm">Completed</div>
-        </div>
-        <div class="flex justify-between items-center mb-2">
-          <div class="text-lg font-semibold">Transaction ID: {{ transaction.transaction_id }}</div>
-          <div class="text-lg font-semibold">Transaction Amount: {{ transaction.amount }}</div>
-        </div>
-        <div class="mt-2">
-          <span class="text-sm font-semibold 
-            {% if transaction.transaction_type == 'deposit' %}text-green-500{% else %}text-red-500{% endif %}">
-            {{ transaction.transaction_type  }}
-          </span>
-        </div>
-      </div>
-      {% endfor %}
+{% extends 'base.html' %}
 
-    </div>
-    <div
-      class="fixed bottom-0 left-0 right-0 bg-gray-800 p-4 flex justify-around items-center"
-    >
-      <div class="flex flex-col items-center">
-        <i class="fas fa-tasks text-white"></i>
-        <span class="text-sm text-white">Transactions</span>
-      </div>
-      <div class="flex flex-col items-center">
-        <i class="fas fa-calendar-alt text-white"></i>
-        <span class="text-sm text-white">Calendar</span>
-      </div>
-      <div class="flex flex-col items-center">
-        <i class="fas fa-chart-line text-blue-500"></i>
-        <span class="text-sm text-blue-500">Progress</span>
-      </div>
-      <div class="flex flex-col items-center">
-        <i class="fas fa-cog text-white"></i>
-        <span class="text-sm text-white">Settings</span>
-      </div>
-      <div class="flex flex-col items-center">
-        <i class="fas fa-user text-white"></i>
-        <span class="text-sm text-white">Profile</span>
+{% block content %}
+
+
+
+<div class="bg-gray-800 shadow rounded-lg w-full">
+
+
+    <div class="mb-4 ">
+      <h1 class="text-2xl font-bold">Wallet</h1>
+      <div class="flex space-x-4 mt-2">
+        <!-- <div class="flex items-center space-x-1">
+          <span class="text-blue-500">Transactions</span>
+          <span class="bg-blue-500 text-white rounded-full px-2"> 5</span>
+        </div> -->
       </div>
     </div>
+    <div class="bg-gray-800 p-4 rounded-lg mb-4">
+      <div class="flex justify-between mb-2">
+        <div>
+          <span class="text-gray-400 text-sm">Total Amount</span>
+          <div class="text-xl font-semibold">{{ wallets.amount }}</div>
+        </div>
+        <div class="flex space-x-2">
+          <button id="addFundsBtn" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+              Add Funds
+          </button>
+          <button id="withdrawFundsBtn" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+              Withdraw
+          </button>
+      </div>
+      </div>
+    </div>
+
+
+    {% for transaction in transactions %}
+    <div class="bg-gray-800 p-4 rounded-lg mb-4  shadow rounded-lg w-full">
+      <div class="flex justify-between items-center mb-2">
+        <div class="text-sm text-gray-400">Date: {{ transaction.created_at }}</div>
+        <div class="text-green-500 text-sm">Completed</div>
+      </div>
+      <div class="flex justify-between items-center mb-2">
+        <div class="text-lg font-semibold">Transaction ID: {{ transaction.transaction_id }}</div>
+        <div class="text-lg font-semibold">Transaction Amount: {{ transaction.amount }}</div>
+      </div>
+      <div class="mt-2">
+        <span class="text-sm font-semibold 
+          {% if transaction.transaction_type == 'deposit' %}text-green-500{% else %}text-red-500{% endif %}">
+          {{ transaction.transaction_type  }}
+        </span>
+      </div>
+    </div>
+    {% endfor %}
+
+
 
 
 
 <!-- Add Funds Modal -->
 <div id="addFundsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-  <div class="bg-gray-900 rounded-lg shadow-xl w-96 p-6 relative">
-      <!-- Close Button -->
-      <button id="closeAddFundsModal" class="absolute top-4 right-4 text-gray-600 hover:text-gray-900">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-      </button>
+<div class="bg-gray-900 rounded-lg shadow-xl w-96 p-6 relative">
+    <!-- Close Button -->
+    <button id="closeAddFundsModal" class="absolute top-4 right-4 text-gray-600 hover:text-gray-900">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+    </button>
 
-      <!-- Modal Title -->
-      <h2 class="text-2xl font-bold mb-4 text-center text-green-600">
-          Add Funds
-      </h2>
+    <!-- Modal Title -->
+    <h2 class="text-2xl font-bold mb-4 text-center text-green-600">
+        Add Funds
+    </h2>
 
-      <!-- Add Funds Form -->
-      <form action="{% url 'transaction' %}" method="post" id="addFundsForm" class="space-y-4">
-        {% csrf_token %}
-          <div>
-              <label for="addAmount" class="block text-sm font-medium text-gray-700">
-                  Amount to Add
-              </label>
-              <input  style="color: black;"
-                  type="number" 
-                  id="addAmount"
-                  min="0"
-                  step="0.01"
-                  required
-                  class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-green-500 focus:border-green-500"
-                  placeholder="Enter amount to add"
-                  name="amount"
-              >
-              <input type="text" hidden name="transaction" value="deposit">
-          </div>
+    <!-- Add Funds Form -->
+    <form action="{% url 'transaction' %}" method="post" id="addFundsForm" class="space-y-4">
+      {% csrf_token %}
+        <div>
+            <label for="addAmount" class="block text-sm font-medium text-gray-700">
+                Amount to Add
+            </label>
+            <input  style="color: black;"
+                type="number" 
+                id="addAmount"
+                min="0"
+                step="0.01"
+                required
+                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-green-500 focus:border-green-500"
+                placeholder="Enter amount to add"
+                name="amount"
+            >
+            <input type="text" hidden name="transaction" value="deposit">
+        </div>
 
-         
+       
 
-          <button 
-              type="submit" 
-              class="w-full py-2 rounded text-white bg-green-500 hover:bg-green-600"
-          >
-              Add Funds
-          </button>
-      </form>
-  </div>
+        <button 
+            type="submit" 
+            class="w-full py-2 rounded text-white bg-green-500 hover:bg-green-600"
+        >
+            Add Funds
+        </button>
+    </form>
+</div>
 </div>
 
 <!-- Withdraw Funds Modal -->
 <div id="withdrawFundsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-  <div class="bg-gray-900 rounded-lg shadow-xl w-96 p-6 relative">
-      <!-- Close Button -->
-      <button id="closeWithdrawFundsModal" class="absolute top-4 right-4 text-gray-600 hover:text-gray-900">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-      </button>
+<div class="bg-gray-900 rounded-lg shadow-xl w-96 p-6 relative">
+    <!-- Close Button -->
+    <button id="closeWithdrawFundsModal" class="absolute top-4 right-4 text-gray-600 hover:text-gray-900">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+    </button>
 
-      <!-- Modal Title -->
-      <h2 class="text-2xl font-bold mb-4 text-center text-red-600">
-          Withdraw Funds
-      </h2>
+    <!-- Modal Title -->
+    <h2 class="text-2xl font-bold mb-4 text-center text-red-600">
+        Withdraw Funds
+    </h2>
 
-      <!-- Withdraw Funds Form -->
-      <form  action="{% url 'transaction' %}" method="post" id="withdrawFundsForm" class="space-y-4">
-        {% csrf_token %}
-          <div>
-              <label for="withdrawAmount" class="block text-sm font-medium text-gray-700">
-                  Amount to Withdraw
-              </label>
-              <input style="color: black;"
-                  type="number" 
-                  id="withdrawAmount"
-                  min="0"
-                  step="0.01"
-                  required
-                  class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-red-500 focus:border-red-500"
-                  placeholder="Enter amount to withdraw"
-                  name="amount"
-              >
-              <input type="text" hidden name="transaction" value="withdrawal">
-          </div>
+    <!-- Withdraw Funds Form -->
+    <form  action="{% url 'transaction' %}" method="post" id="withdrawFundsForm" class="space-y-4">
+      {% csrf_token %}
+        <div>
+            <label for="withdrawAmount" class="block text-sm font-medium text-gray-700">
+                Amount to Withdraw
+            </label>
+            <input style="color: black;"
+                type="number" 
+                id="withdrawAmount"
+                min="0"
+                step="0.01"
+                required
+                class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-red-500 focus:border-red-500"
+                placeholder="Enter amount to withdraw"
+                name="amount"
+            >
+            <input type="text" hidden name="transaction" value="withdrawal">
+        </div>
 
-       
+     
 
-          <button 
-              type="submit" 
-              class="w-full py-2 rounded text-white bg-red-500 hover:bg-red-600"
-          >
-              Withdraw Funds
-          </button>
-      </form>
-  </div>
+        <button 
+            type="submit" 
+            class="w-full py-2 rounded text-white bg-red-500 hover:bg-red-600"
+        >
+            Withdraw Funds
+        </button>
+    </form>
 </div>
+</div>
+
+</div>
+
 
 <script>
   // Add Funds Modal Elements
@@ -261,5 +246,6 @@
       }
   });
 </script>
-  </body>
-</html>
+
+  
+{% endblock content %}

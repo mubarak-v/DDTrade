@@ -60,7 +60,7 @@ LOGOUT_REDIRECT_URL = '/'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR /'main/template/main',BASE_DIR /'user_management/template/user_management', BASE_DIR /'algo/template/algo'],
+        'DIRS': [BASE_DIR /'main/template/main',BASE_DIR /'user_management/template/user_management', BASE_DIR /'algo/template/algo',BASE_DIR /'DDTrade/template'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
