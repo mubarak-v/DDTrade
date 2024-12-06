@@ -51,6 +51,9 @@ def wallet(request):
 
     # Filter wallets for the logged-in user
     wallets = Wallet.objects.filter(account__username=user.username)
+    wallet = None
+    transactions = []
+    print
 
     if wallets.exists():
         # Take the first wallet
@@ -60,19 +63,25 @@ def wallet(request):
 
         # Fetch all transactions for this wallet
         transactions = TransactionDetails.objects.filter(Wallet=wallet)
-        for transaction in transactions:
-            print(f"Transaction ID: {transaction.transaction_id}, Amount: {transaction.amount}")
-
+        
+        wallets = wallets[0]
     else:
         print("No wallet found for the user.")
 
     # Pass wallets to the template
     context = {
-        'wallets': wallets[0],
-        'transactions': transactions
+        'wallets': wallets,
+        'transactions': transactions, 
+        'has_wallet': wallet is not None, 
+        'request':request
 
                }
     return render(request, 'wallet.html', context)
+def createWallet(request):
+    user = request.user
+    wallet = Wallet.objects.create(account=user)
+    return redirect('wallet')
+
 
 
 def buyStock(request):

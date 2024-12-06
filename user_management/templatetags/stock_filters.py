@@ -1,6 +1,7 @@
 from django import template
 from datetime import datetime, timedelta
 from main.models import StockDetails
+from user_management.models import Wallet
 register = template.Library()
 
 @register.simple_tag
