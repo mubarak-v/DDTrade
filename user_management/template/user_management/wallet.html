@@ -39,39 +39,106 @@
           <div class="text-xl font-semibold">{{ wallets.amount }}</div>
         </div>
         <div class="flex space-x-2">
-          <button id="addFundsBtn" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
-              Add Funds
-          </button>
-          <button id="withdrawFundsBtn" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
-              Withdraw
-          </button>
+            
+            {% if has_wallet %}
+           
+            <button id="addFundsBtn" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+             
+                Add Funds
+            </button>
+            <button id="withdrawFundsBtn" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                Withdraw
+            </button>
+            
+            {% else %}
+            <button hidden id="addFundsBtn" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+             
+                Add Funds
+            </button>
+            <button hidden id="withdrawFundsBtn" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                Withdraw
+            </button>
+
+   <button id="createWalletBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                Create Wallet
+  
+            </button> 
+  
+            {% endif %}
+                
+       
+          
+          
       </div>
       </div>
     </div>
 
 
-    {% for transaction in transactions %}
-    <div class="bg-gray-800 p-4 rounded-lg mb-4  shadow rounded-lg w-full">
-      <div class="flex justify-between items-center mb-2">
-        <div class="text-sm text-gray-400">Date: {{ transaction.created_at }}</div>
-        <div class="text-green-500 text-sm">Completed</div>
-      </div>
-      <div class="flex justify-between items-center mb-2">
-        <div class="text-lg font-semibold">Transaction ID: {{ transaction.transaction_id }}</div>
-        <div class="text-lg font-semibold">Transaction Amount: {{ transaction.amount }}</div>
-      </div>
-      <div class="mt-2">
-        <span class="text-sm font-semibold 
-          {% if transaction.transaction_type == 'deposit' %}text-green-500{% else %}text-red-500{% endif %}">
-          {{ transaction.transaction_type  }}
-        </span>
-      </div>
-    </div>
-    {% endfor %}
+{% if transactions %}
+        
+{% for transaction in transactions %}
+<div class="bg-gray-800 p-4 rounded-lg mb-4  shadow rounded-lg w-full">
+  <div class="flex justify-between items-center mb-2">
+    <div class="text-sm text-gray-400">Date: {{ transaction.created_at }}</div>
+    <div class="text-green-500 text-sm">Completed</div>
+  </div>
+  <div class="flex justify-between items-center mb-2">
+    <div class="text-lg font-semibold">Transaction ID: {{ transaction.transaction_id }}</div>
+    <div class="text-lg font-semibold">Transaction Amount: {{ transaction.amount }}</div>
+  </div>
+  <div class="mt-2">
+    <span class="text-sm font-semibold 
+      {% if transaction.transaction_type == 'deposit' %}text-green-500{% else %}text-red-500{% endif %}">
+      {{ transaction.transaction_type  }}
+    </span>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
 
 
 
 
+<!-- Create Wallet Modal -->
+<div id="createWalletModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+  <div class="bg-gray-900 rounded-lg shadow-xl w-96 p-6 relative">
+      <!-- Close Button -->
+      <button id="closeCreateWalletModal" class="absolute top-4 right-4 text-gray-600 hover:text-gray-900">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+      </button>
+  
+      <!-- Modal Title -->
+      <h2 class="text-2xl font-bold mb-4 text-center text-blue-600">
+          Create Wallet
+      </h2>
+      <!-- Create Wallet Form -->
+      <form action="{% url 'createWallet' %}" method="post" id="createWalletForm" class="space-y-4">
+        {% csrf_token %}
+          <div>
+              <label for="walletName" class="block text-sm font-medium text-gray-700">
+                  Wallet Name
+              </label>
+              <input style="color: black;"
+                  type="text" 
+                  id="walletName"
+                  required
+                  class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Enter wallet name"
+                  name="wallet_name"
+              >
+          </div>
+  
+          <button 
+              type="submit" 
+              class="w-full py-2 rounded text-white bg-blue-500 hover:bg-blue-600"
+          >
+              Create Wallet
+          </button>
+      </form>
+  </div>
+  </div>
 
 <!-- Add Funds Modal -->
 <div id="addFundsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
@@ -245,6 +312,31 @@
           withdrawFundsForm.reset();
       }
   });
+  // Create Wallet Modal Elements
+const createWalletBtn = document.getElementById('createWalletBtn');
+const createWalletModal = document.getElementById('createWalletModal');
+const closeCreateWalletModal = document.getElementById('closeCreateWalletModal');
+const createWalletForm = document.getElementById('createWalletForm');
+
+// Open Create Wallet Modal
+createWalletBtn.addEventListener('click', () => {
+    createWalletModal.classList.remove('hidden');
+});
+
+// Close Create Wallet Modal
+closeCreateWalletModal.addEventListener('click', () => {
+    createWalletModal.classList.add('hidden');
+    createWalletForm.reset();
+});
+
+// Close create wallet modal if clicking outside
+createWalletModal.addEventListener('click', (e) => {
+    if (e.target === createWalletModal) {
+        createWalletModal.classList.add('hidden');
+        createWalletForm.reset();
+    }
+});
+  
 </script>
 
   
