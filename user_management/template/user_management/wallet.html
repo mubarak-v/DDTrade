@@ -222,14 +222,16 @@
             <input type="text" hidden name="transaction" value="withdrawal">
         </div>
 
-     
+ 
+<p id="errorMessage" class="text-sm text-red-500 hidden">Insufficient funds. Please enter a valid amount.</p>
 
-        <button 
-            type="submit" 
-            class="w-full py-2 rounded text-white bg-red-500 hover:bg-red-600"
-        >
-            Withdraw Funds
-        </button>
+<button 
+    type="submit" 
+    id="withdrawButton"
+    class="w-full py-2 rounded text-white bg-red-500 hover:bg-red-600"
+>
+    Withdraw Funds
+</button>
     </form>
 </div>
 </div>
@@ -238,105 +240,109 @@
 
 
 <script>
+ document.addEventListener("DOMContentLoaded", function () {
+  const walletBalance = {{ wallets.amount }};
+
+  // Get the required DOM elements
+  const errorMessage = document.getElementById("errorMessage");
+  const withdrawAmountInput = document.getElementById("withdrawAmount");
+  const withdrawButton = document.getElementById("withdrawButton");
+
+
+
+  withdrawAmountInput.addEventListener("input", function () {
+  const withdrawAmount = parseFloat(withdrawAmountInput.value);
+
+
+  if (withdrawAmount > walletBalance ) {
+    withdrawButton.disabled = true;
+    withdrawButton.classList.add("bg-gray-400", "hover:bg-gray-400", "cursor-not-allowed");
+    withdrawButton.classList.remove("bg-red-500", "hover:bg-red-600");
+    errorMessage.classList.remove("hidden"); 
+  } else {
+    withdrawButton.disabled = false;
+    withdrawButton.classList.remove("bg-gray-400", "hover:bg-gray-400", "cursor-not-allowed");
+    withdrawButton.classList.add("bg-red-500", "hover:bg-red-600");
+    errorMessage.classList.add("hidden"); 
+  }
+});
+
+
   // Add Funds Modal Elements
-  const addFundsBtn = document.getElementById('addFundsBtn');
-  const addFundsModal = document.getElementById('addFundsModal');
-  const closeAddFundsModal = document.getElementById('closeAddFundsModal');
-  const addFundsForm = document.getElementById('addFundsForm');
+  const addFundsBtn = document.getElementById("addFundsBtn");
+  const addFundsModal = document.getElementById("addFundsModal");
+  const closeAddFundsModal = document.getElementById("closeAddFundsModal");
+  const addFundsForm = document.getElementById("addFundsForm");
 
   // Withdraw Funds Modal Elements
-  const withdrawFundsBtn = document.getElementById('withdrawFundsBtn');
-  const withdrawFundsModal = document.getElementById('withdrawFundsModal');
-  const closeWithdrawFundsModal = document.getElementById('closeWithdrawFundsModal');
-  const withdrawFundsForm = document.getElementById('withdrawFundsForm');
+  const withdrawFundsBtn = document.getElementById("withdrawFundsBtn");
+  const withdrawFundsModal = document.getElementById("withdrawFundsModal");
+  const closeWithdrawFundsModal = document.getElementById("closeWithdrawFundsModal");
+  const withdrawFundsForm = document.getElementById("withdrawFundsForm");
+
+  // Create Wallet Modal Elements
+  const createWalletBtn = document.getElementById("createWalletBtn");
+  const createWalletModal = document.getElementById("createWalletModal");
+  const closeCreateWalletModal = document.getElementById("closeCreateWalletModal");
+  const createWalletForm = document.getElementById("createWalletForm");
 
   // Open Add Funds Modal
-  addFundsBtn.addEventListener('click', () => {
-      addFundsModal.classList.remove('hidden');
+  addFundsBtn.addEventListener("click", () => {
+    addFundsModal.classList.remove("hidden");
   });
 
   // Close Add Funds Modal
-  closeAddFundsModal.addEventListener('click', () => {
-      addFundsModal.classList.add('hidden');
-      addFundsForm.reset();
+  closeAddFundsModal.addEventListener("click", () => {
+    addFundsModal.classList.add("hidden");
+    addFundsForm.reset();
   });
 
   // Open Withdraw Funds Modal
-  withdrawFundsBtn.addEventListener('click', () => {
-      withdrawFundsModal.classList.remove('hidden');
+  withdrawFundsBtn.addEventListener("click", () => {
+    withdrawFundsModal.classList.remove("hidden");
   });
 
   // Close Withdraw Funds Modal
-  closeWithdrawFundsModal.addEventListener('click', () => {
-      withdrawFundsModal.classList.add('hidden');
-      withdrawFundsForm.reset();
+  closeWithdrawFundsModal.addEventListener("click", () => {
+    withdrawFundsModal.classList.add("hidden");
+    withdrawFundsForm.reset();
   });
 
-  // Add Funds Form Submission
-  // addFundsForm.addEventListener('submit', (e) => {
-  //     e.preventDefault();
-  //     const amount = document.getElementById('addAmount').value;
-  //     const source = document.getElementById('addSource').value;
-      
-  //     // Example action - replace with your actual logic
-  //     alert(`$${amount} added via ${source}`);
-      
-  //     addFundsModal.classList.add('hidden');
-  //     addFundsForm.reset();
-  // });
+  // Open Create Wallet Modal
+  createWalletBtn.addEventListener("click", () => {
+    createWalletModal.classList.remove("hidden");
+  });
 
-  // Withdraw Funds Form Submission
-  // withdrawFundsForm.addEventListener('submit', (e) => {
-  //     e.preventDefault();
-  //     const amount = document.getElementById('withdrawAmount').value;
-  //     const destination = document.getElementById('withdrawDestination').value;
-      
-  //     // Example action - replace with your actual logic
-  //     alert(`$${amount} withdrawn to ${destination}`);
-      
-  //     withdrawFundsModal.classList.add('hidden');
-  //     withdrawFundsForm.reset();
-  // });
+  // Close Create Wallet Modal
+  closeCreateWalletModal.addEventListener("click", () => {
+    createWalletModal.classList.add("hidden");
+    createWalletForm.reset();
+  });
 
   // Close modals if clicking outside
-  addFundsModal.addEventListener('click', (e) => {
-      if (e.target === addFundsModal) {
-          addFundsModal.classList.add('hidden');
-          addFundsForm.reset();
-      }
-  });
-
-  withdrawFundsModal.addEventListener('click', (e) => {
-      if (e.target === withdrawFundsModal) {
-          withdrawFundsModal.classList.add('hidden');
-          withdrawFundsForm.reset();
-      }
-  });
-  // Create Wallet Modal Elements
-const createWalletBtn = document.getElementById('createWalletBtn');
-const createWalletModal = document.getElementById('createWalletModal');
-const closeCreateWalletModal = document.getElementById('closeCreateWalletModal');
-const createWalletForm = document.getElementById('createWalletForm');
-
-// Open Create Wallet Modal
-createWalletBtn.addEventListener('click', () => {
-    createWalletModal.classList.remove('hidden');
-});
-
-// Close Create Wallet Modal
-closeCreateWalletModal.addEventListener('click', () => {
-    createWalletModal.classList.add('hidden');
-    createWalletForm.reset();
-});
-
-// Close create wallet modal if clicking outside
-createWalletModal.addEventListener('click', (e) => {
-    if (e.target === createWalletModal) {
-        createWalletModal.classList.add('hidden');
-        createWalletForm.reset();
+  addFundsModal.addEventListener("click", (e) => {
+    if (e.target === addFundsModal) {
+      addFundsModal.classList.add("hidden");
+      addFundsForm.reset();
     }
+  });
+
+  withdrawFundsModal.addEventListener("click", (e) => {
+    if (e.target === withdrawFundsModal) {
+      withdrawFundsModal.classList.add("hidden");
+      withdrawFundsForm.reset();
+    }
+  });
+
+  createWalletModal.addEventListener("click", (e) => {
+    if (e.target === createWalletModal) {
+      createWalletModal.classList.add("hidden");
+      createWalletForm.reset();
+    }
+  });
 });
-  
+
+
 </script>
 
   
