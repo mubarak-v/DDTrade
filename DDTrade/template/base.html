@@ -195,6 +195,11 @@
         body {
             font-family: "Roboto", sans-serif;
         }
+        html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden; /* Prevent double scrolling issues */
+}
 
 
 
@@ -262,14 +267,14 @@
             /* Light text for contrast */
             transition: all 0.3s ease;
             height: 100%;
-            overflow: scroll;
+            overflow: scroll !important;
             /* Allow scrolling */
-            scrollbar-width: none;
+            scrollbar-width: none !important;
             /* For Firefox: hide scrollbar */
         }
 
         .main-content::-webkit-scrollbar {
-            display: none;
+            display: none !important;
             /* For Chrome, Safari, and Edge: hide scrollbar */
         }
 
@@ -421,9 +426,9 @@
             </div>
         </div>
 
-        <div class="main-content bg-gray-800 ">
+        <div  class="main-content bg-gray-800 ">
 
-
+                
             {% block content %}
 
             {% endblock content %}

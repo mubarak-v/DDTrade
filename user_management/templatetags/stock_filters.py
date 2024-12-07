@@ -1,3 +1,4 @@
+from decimal import ROUND_HALF_UP, Decimal
 from django import template
 from datetime import datetime, timedelta
 from main.models import StockDetails
@@ -68,4 +69,39 @@ def get_stock_price_difference(stock_name):
         # Calculate the price difference (percentage change)
         price_diff = ((today_stock.closing_price - yesterday_stock.closing_price) / yesterday_stock.closing_price) * 100
         return round(price_diff, 2)
-    return None  # If no data found, return None or 0 depending on your preference
+    return 0.00  # If no data found, return None or 0 depending on your preference
+
+@register.simple_tag(takes_context=True)
+def portfolio_current_amount(context):
+    holding_stocks = context.get('holdingStock', [])
+    total_current_amount = Decimal(0)
+
+    for stock in holding_stocks:
+        current_price = Decimal(stock.current_price)  # Ensure current_price is Decimal
+        quantity = Decimal(stock.quantity)  # Ensure quantity is Decimal
+        total_current_amount += current_price * quantity
+
+    return total_current_amount
+
+
+
+@register.simple_tag(takes_context=True)
+def portfolio_current_PandL(context):
+    Invested_amount = Decimal(context.get('Invested_amount', 0))
+    current_amount = Decimal(portfolio_current_amount(context))  # Ensure portfolio_current_amount returns Decimal
+
+    if Invested_amount == 0:  # Handle division by zero
+        return Decimal('0.00')
+
+    total_PandL_percentage = ((  Invested_amount- current_amount) / Invested_amount) * 100
+    
+    return round(total_PandL_percentage,2)
+
+@register.simple_tag(takes_context=True)
+def portfolio_PandL_amount(context):
+    Invested_amount = Decimal(context.get('Invested_amount', 0))
+    current_amount = Decimal(portfolio_current_amount(context))  # Ensure portfolio_current_amount returns Decimal
+
+    PandL_amount = Invested_amount - current_amount
+    print(f"pandl = {PandL_amount}")
+    return round(PandL_amount,2)

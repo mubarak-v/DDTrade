@@ -37,9 +37,8 @@ def home(request):
     else:
         filtered_stocks = []
     stock_data = []
-    print
-    if not StockDetails.objects.filter(date=today).order_by('-percentage_change') and datetime.now().time() > datetime.strptime("15:35", "%H:%M").time():
-        
+    
+    if datetime.now().weekday() not in [5, 6] and not StockDetails.objects.filter(date=today).order_by('-percentage_change') and datetime.now().time() > datetime.strptime("15:35", "%H:%M").time():
         getStock()
     stock_data_sorted = sorted(stock_data, key=lambda x: x['percentage_change'], reverse=True)
     top_gainers = stock_data_sorted[:20]  
@@ -57,14 +56,21 @@ def home(request):
 
 
 def stock(request):
-    today = datetime.today()
+    
+    
     ticker = request.GET.get('ticker', '').strip().upper()
-    stockDetails = StockDetails.objects.filter(stock__yfinance_name=ticker,date=today)
-    print(stockDetails)
-    for i in stockDetails:
-        print(i.stock.name)
+    latest_date = StockDetails.objects.filter(stock__yfinance_name=ticker).order_by('-date').first()
+    if latest_date:
+        # Filter the stock details for the most recent date
+        stockDetails = StockDetails.objects.filter(stock__yfinance_name=ticker, date=latest_date.date)
+    else:
+        stockDetails = []
+
+    
+    
     context = {
-            'stockDetails': stockDetails
+            'stockDetails': stockDetails,
+            'date' : latest_date.date
 
         }
         

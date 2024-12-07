@@ -27,7 +27,8 @@ def holdings(request):
     context = {
         'holdingStock':holdingStock,
         'Invested_amount':Invested_amount , 
-        'calculate_profit_or_loss':calculate_profit_or_loss 
+        'calculate_profit_or_loss':calculate_profit_or_loss ,
+        'request':request
     }
     
     return render(request,'holdings.html',context)
@@ -47,7 +48,7 @@ def login_view(request):
 
 def wallet(request):
     user = request.user
-    print(user)
+    
 
     # Filter wallets for the logged-in user
     wallets = Wallet.objects.filter(account__username=user.username)
@@ -85,7 +86,6 @@ def createWallet(request):
 
 
 def buyStock(request):
-    print("buy")
     user = request.user
     today = datetime.today()
     ticker = request.GET.get('ticker', '').strip().upper()
@@ -97,7 +97,8 @@ def buyStock(request):
     for price in stockDetails:
         closing_price = price.closing_price
     holding_stock = HoldingStock.objects.filter(wallet=wallets, stock=stock, status="buy").first()
-    wallets.amount -= closing_price
+    wallets.amount -= Decimal(closing_price)
+
     wallets.save()  # save                            
 
     def createTransaction():
@@ -196,7 +197,7 @@ def transaction(request):
             # Validate and convert the amount to Decimal
             amount = Decimal(amount)
             if amount <= 0:
-                messages.error(request, 'The amount must be greater than zero.')
+                messages.error(request, 'Insufficient funds')
                 return redirect("wallet")
 
             user = request.user
