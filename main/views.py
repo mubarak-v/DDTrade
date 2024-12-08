@@ -1,5 +1,4 @@
 import yfinance as yf
-import matplotlib.pyplot as plt
 from django.shortcuts import render
 import io
 import base64
@@ -10,28 +9,20 @@ from .stock_name import save_stock_data_to_db
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
+from django.db.models import Max
 from user_management.utils import  getStock, updateWalletStockDetails
 
 
     
 def home(request):
-    
-    s = Stock.objects.all()
-    
-        
+   
+    s = Stock.objects.all() 
     query = request.GET.get('ticker', '').strip().upper()
     stock_names = list(Stock.objects.values_list('yfinance_name', flat=True))
 
     today = datetime.today()
-    
-    today_stock_details = StockDetails.objects.filter(date=today).order_by('-percentage_change')
-    if not today_stock_details:
-        yesterday = today - timedelta(days=1)
-        today_stock_details = StockDetails.objects.filter(date=yesterday).order_by('-percentage_change')
-    elif not today_stock_details:
-        yesterday = today - timedelta(days=2)
-        today_stock_details = StockDetails.objects.filter(date=yesterday).order_by('-percentage_change')
-
+    last_date = StockDetails.objects.aggregate(Max('date'))['date__max']
+    today_stock_details = StockDetails.objects.filter(date=last_date).order_by('-percentage_change')  
     if query:
         filtered_stocks = [ticker for ticker in stock_names if query in ticker.upper()]
     else:
@@ -50,14 +41,7 @@ def home(request):
         }
     
     return render(request, 'home.html', context)
-
-
-
-
-
 def stock(request):
-    
-    
     ticker = request.GET.get('ticker', '').strip().upper()
     latest_date = StockDetails.objects.filter(stock__yfinance_name=ticker).order_by('-date').first()
     if latest_date:
@@ -66,17 +50,11 @@ def stock(request):
     else:
         stockDetails = []
 
-    
-    
     context = {
             'stockDetails': stockDetails,
             'date' : latest_date.date
 
         }
-        
-   
-
-    
 
     return render(request, 'stock_details.html', context)
 

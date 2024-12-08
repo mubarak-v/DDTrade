@@ -66,3 +66,45 @@ def getStock():
         updateWalletStockDetails()
     except Exception as e:
         print(f"Error processing stocks: {e}")
+
+
+# save stock history
+def saveStockHistory(days=90):
+    today = datetime.today()
+    start_date = today - timedelta(days=days)  
+    stock_names = list(Stock.objects.values_list('yfinance_name', flat=True))
+    
+    try:
+        for ticker in stock_names:
+            stock = yf.Ticker(ticker)
+            hist = stock.history(start=start_date, end=today)
+            if not hist.empty:
+                for date, row in hist.iterrows():
+                    close_price = round(row['Close'], 2)
+                    
+                    stock_obj, created = Stock.objects.get_or_create(
+                        yfinance_name=ticker,
+                    )
+
+                    if not StockDetails.objects.filter(stock=stock_obj, date=date.date()).exists():
+                        StockDetails.objects.create(
+                            stock=stock_obj,  
+                            closing_price=close_price,
+                            percentage_change=0,  
+                            date=date.date()  
+                        )
+                        print(f"stock:{ticker}, close_price:{close_price},date:{date}")
+                    else:
+                        print(f"Record for {ticker} on {date.date()} already exists.")
+        print("Three months' stock data processed.")
+    except Exception as e:
+        print(f"Error processing stocks for three months: {e}")
+
+       
+ # Delete all StockDetails records
+def deleteAllStockDetails():
+    try:
+        StockDetails.objects.all().delete()
+        print("All StockDetails records have been deleted.")
+    except Exception as e:
+        print(f"Error deleting StockDetails: {e}")
