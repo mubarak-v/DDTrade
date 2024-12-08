@@ -372,7 +372,7 @@
 
         <a href="{% url 'wallet' %}" id="wallet-btn" class="sidebar-btn">Wallet</a>
         <a href="{% url 'holdings' %}" id="portfolio-btn" class="sidebar-btn">Portfolio</a>
-        <button id="algo-trading-btn" class="sidebar-btn">Algo Trading</button>
+        <a href="{% url 'algoMain' %}" id="algo-trading-btn" class="sidebar-btn">Algo Trading</a>
         <button id="settings-btn" class="sidebar-btn">Settings</button>
 
         {% if user.is_authenticated %}

@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.hashers import make_password
+from algo.models import TradingTransaction
 import uuid
 # Create your models here.
 # email mubarak@gmail.com

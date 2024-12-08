@@ -16,7 +16,7 @@ class StockDetails(models.Model):
         blank=True  )
     closing_price = models.DecimalField(max_digits=10, decimal_places=2)  # Adjusted for numeric data
     percentage_change = models.DecimalField(max_digits=5, decimal_places=2)  
-    date = models.DateField(auto_now_add=True)  # Keeps the default of auto-setting the creation date
+    date = models.DateField()  # Keeps the default of auto-setting the creation date
 
     def __str__(self):
         return f"{self.stock.name} on {self.date}: {self.closing_price}"
