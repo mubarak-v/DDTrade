@@ -1,15 +1,18 @@
 from django.shortcuts import render
+from . utils import execute_strategy
 
 from algo.models import TradingAlgorithm
 from main.models import StockDetails,Stock
 # Create your views here.
 
 def algoMain(request):
-    tradingalgorithm = TradingAlgorithm.objects.all()
-    # function_name = ''
-    # for trade in tradingalgorithm:
-    #     print(f"algorithm:{trade.name}")
-    #     function_name = trade.name
+    
+    
+    execute_strategy()
+        
+
+    
+        
 
     stockDetails = Stock.objects.all()
     for s in stockDetails:

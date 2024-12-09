@@ -36,6 +36,11 @@ def generate_transaction_id(model_class):
     return str(new_id)
 
 
+def generate_transaction_id_for_trading_transaction():
+    return generate_transaction_id(TradingTransaction)
+
+
+
 
 # Generate a 10-digit number
 class AccountDetailsManager(BaseUserManager):
