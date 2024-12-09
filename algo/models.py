@@ -25,6 +25,10 @@ def generate_transaction_id(model_class):
         new_id = 1000000000
 
     return str(new_id)
+def generate_transaction_id_for_trading_transaction():
+    return generate_transaction_id(TradingTransaction)
+
+
 
 class TradingAlgorithm(models.Model):
     name = models.CharField(max_length=100,  unique=True)
@@ -36,10 +40,12 @@ class TradingAlgorithm(models.Model):
     
 class TradingTransaction(models.Model):
     transaction_id = models.BigIntegerField(
-        unique=True,
-        editable=False,
-        default=lambda: generate_transaction_id(TradingTransaction)
-    )
+    unique=True,
+    editable=False,
+    default=generate_transaction_id_for_trading_transaction
+)
+
+
     trading_algorithm = models.ForeignKey(
         TradingAlgorithm, related_name='transactions', on_delete=models.CASCADE, null=True, blank=True
     )
@@ -74,3 +80,13 @@ class algo_performance(models.Model):
     status = models.CharField(choices=(('WIN', 'Win'), ('LOSS', 'loss')), max_length=10)
     profit_or_loss = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     duration = models.DurationField(null=True, blank=True)
+
+
+class StocksignalResult(models.Model):
+    stock = models.ForeignKey(Stock, related_name='single_result', on_delete=models.CASCADE)
+    tradingAlgorithm = models.ForeignKey(TradingAlgorithm,related_name='tradingAlgorithm_result', on_delete=models.CASCADE )
+    signal = models.CharField( max_length=10)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return f"{self.stock.name}- {self.tradingAlgorithm.name}-{self.signal}"
