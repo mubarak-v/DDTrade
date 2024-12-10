@@ -3,6 +3,9 @@ from .models import Wallet, HoldingStock
 from datetime import datetime, timedelta
 from main.models import StockDetails, Stock
 import yfinance as yf
+from algo.utils import execute_strategy
+
+
 
 
 def calculate_percentage(a, b, decimals=2):
@@ -39,66 +42,73 @@ def updateWalletStockDetails():
 
 def getStock():
     today = datetime.today()
-    start_date = today - timedelta(days=30)
+    
     stock_names = list(Stock.objects.values_list('yfinance_name', flat=True))
-    start_date = today - timedelta(days=60)
+    
     try:
-        for ticker in stock_names:
+        for ticker in stock_names:   
             stock = yf.Ticker(ticker)
-            hist = stock.history(start=start_date, end=today)
+            hist = stock.history(start=today, end=today + timedelta(days=1))
             if not hist.empty:
                 open_price = hist['Close'].iloc[0]
                 close_price = round(hist['Close'].iloc[-1], 2)
-                percentage_change = ((close_price - open_price) / open_price) * 100
-
-                # Ensure the Stock object is correctly fetched or created
-                stock_obj, created = Stock.objects.get_or_create(
-                    yfinance_name=ticker,
-                    defaults={'name': ticker}  # Provide a default name
-                )
-
-                # Save StockDetails with valid foreign key and data
+                stock  = Stock.objects.filter(yfinance_name=ticker)
                 StockDetails.objects.create(
-                    stock=stock_obj,  # Valid Stock instance
+                    stock=stock, 
                     closing_price=close_price,
-                    percentage_change=percentage_change
+                    opening_price= open_price               
                 )
         updateWalletStockDetails()
+        execute_strategy()  
     except Exception as e:
         print(f"Error processing stocks: {e}")
 
 
-# save stock history
 def saveStockHistory(days=90):
     today = datetime.today()
-    start_date = today - timedelta(days=days)  
+    start_date = today - timedelta(days=days)
     stock_names = list(Stock.objects.values_list('yfinance_name', flat=True))
     
     try:
         for ticker in stock_names:
             stock = yf.Ticker(ticker)
             hist = stock.history(start=start_date, end=today)
+            
             if not hist.empty:
+                # Ensure open_price is calculated correctly
+                open_price = hist['Open'].iloc[0] if 'Open' in hist.columns else None
+
                 for date, row in hist.iterrows():
                     close_price = round(row['Close'], 2)
                     
-                    stock_obj, created = Stock.objects.get_or_create(
+                    stock_obj, _ = Stock.objects.get_or_create(
                         yfinance_name=ticker,
                     )
 
-                    if not StockDetails.objects.filter(stock=stock_obj, date=date.date()).exists():
+                    # Avoid duplicate entries for the same date
+                    stock_date = date.date()  # This is the date to store in the database
+
+                    # Ensure that only unique entries are created for each day
+                    if not StockDetails.objects.filter(stock=stock_obj, date=stock_date).exists():
                         StockDetails.objects.create(
                             stock=stock_obj,  
                             closing_price=close_price,
-                            percentage_change=0,  
-                            date=date.date()  
+                            percentage_change=0,  # This could be computed if needed
+                            opening_price=open_price,
+                            date=stock_date  
                         )
-                        print(f"stock:{ticker}, close_price:{close_price},date:{date}")
+                        print(f"Stock: {ticker}, Date: {stock_date}, Closing Price: {close_price}")
                     else:
-                        print(f"Record for {ticker} on {date.date()} already exists.")
-        print("Three months' stock data processed.")
+                        print(f"Record for {ticker} on {stock_date} already exists.")
+            else:
+                print(f"No data available for {ticker} from {start_date} to {today}.")
+        
+        print(f"{days} days' stock data processed.")
     except Exception as e:
-        print(f"Error processing stocks for three months: {e}")
+        # Log the error with the actual exception message
+        print(f"Error processing stocks for {days} days: {str(e)}")
+
+
 
        
  # Delete all StockDetails records

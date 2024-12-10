@@ -13,19 +13,19 @@ def execute_strategy():
            
             result  = strategy_function(stock.name)
             print(result)
-            if 'buy' or 'sell' or 'Natural':
-                print(f"stock_name:{stock.name},result:{result}")
-                stocksignalResult = StocksignalResult()
-                stocksignalResult.stock = stock
-                stocksignalResult.tradingAlgorithm = algorithm
-                stocksignalResult.signal = result
-                stocksignalResult.save()
-            else :
-                stocksignalResult = StocksignalResult()
-                stocksignalResult.stock = stock
-                stocksignalResult.tradingAlgorithm = algorithm
-                stocksignalResult.signal = "notfound"
-                stocksignalResult.save()
+            # if 'buy' or 'sell' or 'Natural':
+            #     print(f"stock_name:{stock.name},result:{result}")
+            #     stocksignalResult = StocksignalResult()
+            #     stocksignalResult.stock = stock
+            #     stocksignalResult.tradingAlgorithm = algorithm
+            #     stocksignalResult.signal = result
+            #     stocksignalResult.save()
+            # else :
+            #     stocksignalResult = StocksignalResult()
+            #     stocksignalResult.stock = stock
+            #     stocksignalResult.tradingAlgorithm = algorithm
+            #     stocksignalResult.signal = "notfound"
+            #     stocksignalResult.save()
 
     
    
