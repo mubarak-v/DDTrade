@@ -50,11 +50,12 @@ def get_stock_signal(yfinance_name):
 
     today = date.today()
     
+    
     # Try to find the closest available date in the last 6 days
     stock_data = None
     for days_back in range(1, 50):  # Start from 1 day back, go up to 6 days back
-        yesterday = today - timedelta(days=days_back)
-        stock_data = StockDetails.objects.filter(stock__yfinance_name=yfinance_name, date=yesterday).order_by('date')
+        
+        stock_data = StockDetails.objects.filter(stock__yfinance_name=yfinance_name, date=today).order_by('date')
         
         if stock_data.exists():  # If stock data is found, break out of the loop
             break
@@ -62,7 +63,7 @@ def get_stock_signal(yfinance_name):
         # If no data was found within the last 6 days, return a message
         return "No data available for the last 6 days."
 
-    print(f"Using data from {yesterday}.")  # Output which day we are using
+    print(f"Using data from {today}.")  # Output which day we are using
     
     # Convert to a DataFrame for analysis
     df = pd.DataFrame.from_records(
@@ -77,7 +78,7 @@ def get_stock_signal(yfinance_name):
     df['Signal'] = None
 
     # Ensure we have data for yesterday
-    if yesterday not in df.index:
+    if today not in df.index:
         return "No data available for yesterday."
 
     # Iterate through the dataframe to determine signals
@@ -105,7 +106,7 @@ def get_stock_signal(yfinance_name):
         df.loc[current_date, 'Signal'] = current_signal
 
     # Return the signal for yesterday
-    return df.loc[yesterday, 'Signal']
+    return df.loc[today, 'Signal']
 def ut_bot(yfinance_name):
     """
     Generate buy/sell/natural signals for a given stock.
@@ -120,7 +121,7 @@ def ut_bot(yfinance_name):
     stock_data = None
     for days_back in range(1, 50):  # Start from 1 day back, go up to 50 days back
         yesterday = today - timedelta(days=days_back)
-        stock_data = StockDetails.objects.filter(stock__yfinance_name=yfinance_name, date=yesterday).order_by('date')
+        stock_data = StockDetails.objects.filter(stock__yfinance_name=yfinance_name, date=today).order_by('date')
         
         if stock_data.exists():  # If stock data is found, break out of the loop
             break
@@ -128,7 +129,7 @@ def ut_bot(yfinance_name):
         # If no data was found within the last 6 days, return a message
         return "No data available for the last 6 days."
 
-    print(f"Using data from {yesterday}.")  # Output which day we are using
+    print(f"Using data from {today}.")  # Output which day we are using
     
     # Convert to a DataFrame for analysis
     df = pd.DataFrame.from_records(
@@ -162,4 +163,4 @@ def ut_bot(yfinance_name):
             last_signal = df['signal'][i]
 
     # Return the signal for yesterday
-    return df.loc[yesterday, 'signal']
+    return df.loc[today, 'signal']

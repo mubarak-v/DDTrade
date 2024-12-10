@@ -16,7 +16,7 @@ from user_management.utils import  getStock, updateWalletStockDetails,deleteAllS
     
 def home(request):
     # deleteAllStockDetails()
-    # saveStockHistory(60)
+    # saveStockHistory(30)
     s = Stock.objects.all() 
     query = request.GET.get('ticker', '').strip().upper()
     stock_names = list(Stock.objects.values_list('yfinance_name', flat=True))

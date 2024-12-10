@@ -16,5 +16,9 @@ def execute_strategy():
         
         for stock in stocks:
             result = strategy_function(stock.name)
+            
+            stocksignalResult= StocksignalResult(stock=stock, tradingAlgorithm=algorithm, signal=result)
+            stocksignalResult.save()
+            
             print(f"stock_name: {stock.name},function name:{stock.name} result: {result}")
     
