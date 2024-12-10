@@ -3,6 +3,9 @@ from .models import Wallet, HoldingStock
 from datetime import datetime, timedelta
 from main.models import StockDetails, Stock
 import yfinance as yf
+from algo.utils import execute_strategy
+
+
 
 
 def calculate_percentage(a, b, decimals=2):
@@ -39,66 +42,82 @@ def updateWalletStockDetails():
 
 def getStock():
     today = datetime.today()
-    start_date = today - timedelta(days=30)
+    
     stock_names = list(Stock.objects.values_list('yfinance_name', flat=True))
-    start_date = today - timedelta(days=60)
+    
     try:
-        for ticker in stock_names:
+        for ticker in stock_names:   
             stock = yf.Ticker(ticker)
-            hist = stock.history(start=start_date, end=today)
+            hist = stock.history(start=today, end=today + timedelta(days=1))
             if not hist.empty:
-                open_price = hist['Close'].iloc[0]
-                close_price = round(hist['Close'].iloc[-1], 2)
-                percentage_change = ((close_price - open_price) / open_price) * 100
+                open_price = hist['Open'].iloc[0]  # Use 'Open' for the opening price
+                close_price = round(hist['Close'].iloc[-1], 2)  # Use 'Close' for the closing price
+                high_price = round(hist['High'].iloc[0], 2)  # Use 'High' for the high price
+                low_price = round(hist['Low'].iloc[0], 2)  # Use 'Low' for the low price
 
-                # Ensure the Stock object is correctly fetched or created
-                stock_obj, created = Stock.objects.get_or_create(
-                    yfinance_name=ticker,
-                    defaults={'name': ticker}  # Provide a default name
-                )
-
-                # Save StockDetails with valid foreign key and data
+                stock_obj = Stock.objects.get(yfinance_name=ticker)  # Assuming you want a single stock instance
                 StockDetails.objects.create(
-                    stock=stock_obj,  # Valid Stock instance
+                    stock=stock_obj, 
                     closing_price=close_price,
-                    percentage_change=percentage_change
+                    opening_price=open_price,
+                    high=high_price,
+                    low=low_price, 
+                    date = today
                 )
         updateWalletStockDetails()
+        execute_strategy()  
     except Exception as e:
         print(f"Error processing stocks: {e}")
 
 
-# save stock history
+
 def saveStockHistory(days=90):
+    print("Saving stock history")
     today = datetime.today()
-    start_date = today - timedelta(days=days)  
+    start_date = today - timedelta(days=days)
     stock_names = list(Stock.objects.values_list('yfinance_name', flat=True))
     
     try:
         for ticker in stock_names:
             stock = yf.Ticker(ticker)
             hist = stock.history(start=start_date, end=today)
+            
             if not hist.empty:
+                open_price = hist['Open'].iloc[0] if 'Open' in hist.columns else None
+
                 for date, row in hist.iterrows():
                     close_price = round(row['Close'], 2)
-                    
-                    stock_obj, created = Stock.objects.get_or_create(
+                    high_price = round(row['High'], 2) if 'High' in row else None
+                    low_price = round(row['Low'], 2) if 'Low' in row else None
+
+                    stock_obj, _ = Stock.objects.get_or_create(
                         yfinance_name=ticker,
                     )
 
-                    if not StockDetails.objects.filter(stock=stock_obj, date=date.date()).exists():
+                    stock_date = date.date()
+
+                    if not StockDetails.objects.filter(stock=stock_obj, date=stock_date).exists():
                         StockDetails.objects.create(
-                            stock=stock_obj,  
+                            stock=stock_obj,
                             closing_price=close_price,
-                            percentage_change=0,  
-                            date=date.date()  
+                            opening_price=open_price,
+                            high=high_price,
+                            low=low_price,
+                            percentage_change=0,  # Update if percentage change logic is required
+                            date=stock_date
                         )
-                        print(f"stock:{ticker}, close_price:{close_price},date:{date}")
+                        print(f"Stock: {ticker}, Date: {stock_date}, Closing Price: {close_price}, High: {high_price}, Low: {low_price}")
                     else:
-                        print(f"Record for {ticker} on {date.date()} already exists.")
-        print("Three months' stock data processed.")
+                        print(f"Record for {ticker} on {stock_date} already exists.")
+            else:
+                print(f"No data available for {ticker} from {start_date} to {today}.")
+        
+        print(f"{days} days' stock data processed.")
     except Exception as e:
-        print(f"Error processing stocks for three months: {e}")
+        print(f"Error processing stocks for {days} days: {str(e)}")
+
+
+
 
        
  # Delete all StockDetails records

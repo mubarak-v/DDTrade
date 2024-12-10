@@ -10,12 +10,13 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from django.db.models import Max
-from user_management.utils import  getStock, updateWalletStockDetails
+from user_management.utils import  getStock, updateWalletStockDetails,deleteAllStockDetails,saveStockHistory
 
 
     
 def home(request):
-   
+    # deleteAllStockDetails()
+    # saveStockHistory(30)
     s = Stock.objects.all() 
     query = request.GET.get('ticker', '').strip().upper()
     stock_names = list(Stock.objects.values_list('yfinance_name', flat=True))
