@@ -50,13 +50,19 @@ def getStock():
             stock = yf.Ticker(ticker)
             hist = stock.history(start=today, end=today + timedelta(days=1))
             if not hist.empty:
-                open_price = hist['Close'].iloc[0]
-                close_price = round(hist['Close'].iloc[-1], 2)
-                stock  = Stock.objects.filter(yfinance_name=ticker)
+                open_price = hist['Open'].iloc[0]  # Use 'Open' for the opening price
+                close_price = round(hist['Close'].iloc[-1], 2)  # Use 'Close' for the closing price
+                high_price = round(hist['High'].iloc[0], 2)  # Use 'High' for the high price
+                low_price = round(hist['Low'].iloc[0], 2)  # Use 'Low' for the low price
+
+                stock_obj = Stock.objects.get(yfinance_name=ticker)  # Assuming you want a single stock instance
                 StockDetails.objects.create(
-                    stock=stock, 
+                    stock=stock_obj, 
                     closing_price=close_price,
-                    opening_price= open_price               
+                    opening_price=open_price,
+                    high=high_price,
+                    low=low_price, 
+                    date = today
                 )
         updateWalletStockDetails()
         execute_strategy()  
@@ -64,7 +70,9 @@ def getStock():
         print(f"Error processing stocks: {e}")
 
 
+
 def saveStockHistory(days=90):
+    print("Saving stock history")
     today = datetime.today()
     start_date = today - timedelta(days=days)
     stock_names = list(Stock.objects.values_list('yfinance_name', flat=True))
@@ -75,29 +83,30 @@ def saveStockHistory(days=90):
             hist = stock.history(start=start_date, end=today)
             
             if not hist.empty:
-                # Ensure open_price is calculated correctly
                 open_price = hist['Open'].iloc[0] if 'Open' in hist.columns else None
 
                 for date, row in hist.iterrows():
                     close_price = round(row['Close'], 2)
-                    
+                    high_price = round(row['High'], 2) if 'High' in row else None
+                    low_price = round(row['Low'], 2) if 'Low' in row else None
+
                     stock_obj, _ = Stock.objects.get_or_create(
                         yfinance_name=ticker,
                     )
 
-                    # Avoid duplicate entries for the same date
-                    stock_date = date.date()  # This is the date to store in the database
+                    stock_date = date.date()
 
-                    # Ensure that only unique entries are created for each day
                     if not StockDetails.objects.filter(stock=stock_obj, date=stock_date).exists():
                         StockDetails.objects.create(
-                            stock=stock_obj,  
+                            stock=stock_obj,
                             closing_price=close_price,
-                            percentage_change=0,  # This could be computed if needed
                             opening_price=open_price,
-                            date=stock_date  
+                            high=high_price,
+                            low=low_price,
+                            percentage_change=0,  # Update if percentage change logic is required
+                            date=stock_date
                         )
-                        print(f"Stock: {ticker}, Date: {stock_date}, Closing Price: {close_price}")
+                        print(f"Stock: {ticker}, Date: {stock_date}, Closing Price: {close_price}, High: {high_price}, Low: {low_price}")
                     else:
                         print(f"Record for {ticker} on {stock_date} already exists.")
             else:
@@ -105,8 +114,8 @@ def saveStockHistory(days=90):
         
         print(f"{days} days' stock data processed.")
     except Exception as e:
-        # Log the error with the actual exception message
         print(f"Error processing stocks for {days} days: {str(e)}")
+
 
 
 

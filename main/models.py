@@ -16,8 +16,8 @@ class StockDetails(models.Model):
         blank=True  )
     closing_price = models.DecimalField(max_digits=10, decimal_places=2)  
     opening_price = models.DecimalField(max_digits=10, decimal_places=2, null=True)
-    high = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    low = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    high = models.DecimalField(max_digits=10, decimal_places=2, default=0, null = True)
+    low = models.DecimalField(max_digits=10, decimal_places=2, default=0, null=True)
     percentage_change = models.DecimalField(max_digits=5, decimal_places=2, null = True)  
     date = models.DateField(null=False )  # Keeps the default of auto-setting the creation date
 
