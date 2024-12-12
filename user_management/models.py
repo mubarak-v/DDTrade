@@ -87,6 +87,7 @@ class Wallet(models.Model):
     amount = models.DecimalField(max_digits=10000000,decimal_places=2,default=0.00)
     account = models.ForeignKey(AccountDetails, on_delete=models.CASCADE, related_name="wallet")
     selected_wallet = models.BooleanField(default=False)
+    name = models.CharField(max_length=100, default='Account-1')
 
 
 # transaction

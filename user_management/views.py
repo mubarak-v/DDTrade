@@ -49,38 +49,50 @@ def login_view(request):
 
 def wallet(request):
     user = request.user
-    
+    selected_wallet_query = request.POST.get('selected-account', '')
+    selected_wallet_id = request.POST.get('selected-account') if request.method == 'POST' else None
 
-    # Filter wallets for the logged-in user
-    wallets = Wallet.objects.filter(account__username=user.username, selected_wallet =True)
+    # Fetch all wallets for the logged-in user
     all_wallets = Wallet.objects.filter(account__username=user.username)
+
+    # Try to find the wallet that matches the selected ID
     wallet = None
-    transactions = []
-    
-
-    if wallets.exists():
-        # Take the first wallet
-        wallet = wallets.first()
-
-        
-
-        # Fetch all transactions for this wallet
-        transactions = TransactionDetails.objects.filter(Wallet=wallet)
-        
-        wallets = wallets[0]
+    if selected_wallet_query:
+        wallet = all_wallets.filter(Wallet_id=selected_wallet_query).first()
+        if wallet:
+            # Update selected_wallet: Set this wallet as selected and others as unselected
+            all_wallets.update(selected_wallet=False)  # Unselect all wallets for the user
+            wallet.selected_wallet = True
+            wallet.save()
+        else:
+            print(f"No wallet found with ID {selected_wallet_query} for user {user.username}.")
     else:
-        print("No wallet found for the user.")
+        # No wallet explicitly selected, find a default selected wallet
+        wallet = all_wallets.filter(selected_wallet=True).first()
+        if not wallet and all_wallets.exists():
+            # No wallet is marked as selected, so pick the first wallet
+            wallet = all_wallets.first()
+            wallet.selected_wallet = True
+            wallet.save()
 
-    # Pass wallets to the template
+    # Fetch transactions for the selected wallet (if any)
+    transactions = []
+    if wallet:
+        transactions = TransactionDetails.objects.filter(Wallet=wallet)
+
+    # Context for rendering the template
     context = {
-        'wallets': wallets,
-        'transactions': transactions, 
-        'has_wallet': wallet is not None, 
-        'request':request, 
-        'all_wallets':all_wallets
+        'wallets': wallet,  # The selected wallet object
+        'transactions': transactions,  # Transactions for the selected wallet
+        'has_wallet': wallet is not None,  # Boolean indicating if a wallet is available
+        'request': request,  # Passing request for template access
+        'all_wallets': all_wallets,  # List of all wallets for dropdown
+        'selected_wallet_id': wallet.Wallet_id if wallet else None  # ID of the selected wallet
+    }
 
-               }
     return render(request, 'wallet.html', context)
+
+
 def createWallet(request):
     user = request.user
     wallet = Wallet.objects.create(account=user)
