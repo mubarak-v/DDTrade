@@ -17,6 +17,7 @@ from .utils import calculate_percentage, calculate_profit_or_loss
 def holdings(request):
     user = request.user
     wallets = Wallet.objects.get(account__username=user.username)
+    
     holdingStock = HoldingStock.objects.filter(wallet = wallets)
     Invested_amount= 0
     for stock in holdingStock:
@@ -51,10 +52,11 @@ def wallet(request):
     
 
     # Filter wallets for the logged-in user
-    wallets = Wallet.objects.filter(account__username=user.username)
+    wallets = Wallet.objects.filter(account__username=user.username, selected_wallet =True)
+    all_wallets = Wallet.objects.filter(account__username=user.username)
     wallet = None
     transactions = []
-    print
+    
 
     if wallets.exists():
         # Take the first wallet
@@ -74,7 +76,8 @@ def wallet(request):
         'wallets': wallets,
         'transactions': transactions, 
         'has_wallet': wallet is not None, 
-        'request':request
+        'request':request, 
+        'all_wallets':all_wallets
 
                }
     return render(request, 'wallet.html', context)
@@ -201,8 +204,9 @@ def transaction(request):
                 return redirect("wallet")
 
             user = request.user
-            wallet = Wallet.objects.get(account__username=user)
-
+            wallet = Wallet.objects.get(account__username=user, selected_wallet=True)
+            
+            
             if transactionType == 'deposit':
                 print(f"Deposit: {amount}")
                 wallet.amount += amount
