@@ -36,8 +36,14 @@ def generate_transaction_id(model_class):
     return str(new_id)
 
 
-def generate_transaction_id_for_trading_transaction():
-    return generate_transaction_id(TradingTransaction)
+def generate_transaction_id_for_transaction_details():
+    
+
+    return generate_transaction_id(TransactionDetails)
+def generate_transaction_id_for_Stock_Transaction():
+    
+
+    return generate_transaction_id(StockTransaction)
 
 
 
@@ -80,8 +86,20 @@ class Wallet(models.Model):
     Wallet_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     amount = models.DecimalField(max_digits=10000000,decimal_places=2,default=0.00)
     account = models.ForeignKey(AccountDetails, on_delete=models.CASCADE, related_name="wallet")
-# transaction
+    selected_wallet = models.BooleanField(default=False)
+    name = models.CharField(max_length=100, default='Account-1')
+    selected_trading_algorithm = models.ForeignKey(
+        'algo.TradingAlgorithm', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,  # Allows the field to be blank in forms
+        related_name="wallets", 
+        help_text="The selected trading algorithm for this wallet."
+    )
+    def __str__(self):
+        return self.name
 
+# transaction
 class TransactionDetails(models.Model):
     TRANSACTION_TYPES = [
         ('deposit', 'Deposit'),
@@ -92,7 +110,7 @@ class TransactionDetails(models.Model):
     transaction_id = models.CharField(
         max_length=10,
         unique=True,
-        default=lambda: generate_transaction_id(TransactionDetails),
+        default=generate_transaction_id_for_transaction_details,
         editable=False
     )
     amount = models.DecimalField(max_digits=12, decimal_places=2)  # Adjust max_digits
@@ -135,7 +153,12 @@ class InverstedAmount(models.Model):
     current_amount = models.DecimalField(max_digits=10000000,decimal_places=2)
 
 class StockTransaction(models.Model):
-    transaction_id = models.BigIntegerField(unique=True, editable=False,default=lambda: generate_transaction_id(StockTransaction) )    
+    transaction_id = models.CharField(
+        max_length=10,
+        unique=True,
+        default=generate_transaction_id_for_Stock_Transaction,
+        editable=False
+    )    
     wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name='StockTransaction')
     stock = models.ForeignKey(Stock, on_delete=models.CASCADE)
     transaction_type = models.CharField(max_length=20, choices=[('buy', 'Buy'), ('sell', 'Sell')])

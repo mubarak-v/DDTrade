@@ -35,6 +35,37 @@ class TradingAlgorithm(models.Model):
     description = models.TextField(blank=True, null=True, max_length=500)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    function_name = models.CharField(max_length=100, blank=True, null=True, )
+    risk_level = models.CharField(
+        max_length=50,
+        choices=[("Low", "Low"), ("Moderate", "Moderate"), ("High", "High")],
+        default="Moderate",
+       
+    )
+    trading_type = models.CharField(
+        max_length=50,
+        choices=[("Intraday", "intraday"), ("Swing", "swing"), ("Positional", "positional"), ("longterm ", "Longterm")],
+        default="Swing",
+       
+    )
+    premium = models.BooleanField(default=False, )
+    capital_requirement = models.DecimalField(
+        max_digits=12, decimal_places=2, 
+        blank=True, null=True, 
+        
+    )
+    executes_on = models.CharField(
+        max_length=255, 
+        default="All Trading Days", 
+       
+    )
+    is_active = models.BooleanField(default=True, )
+    subscription_price = models.DecimalField(
+        max_digits=10, decimal_places=2, 
+        blank=True, null=True, 
+        
+    )
+    is_subscribed = models.BooleanField(default=False, )
     def __str__(self):
         return self.name
     

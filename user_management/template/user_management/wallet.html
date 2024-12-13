@@ -49,6 +49,10 @@
             <button id="withdrawFundsBtn" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
                 Withdraw
             </button>
+            <button id="createWalletBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+              Create Wallet
+
+          </button> 
             
             {% else %}
             <button hidden id="addFundsBtn" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
@@ -63,11 +67,34 @@
                 Create Wallet
   
             </button> 
-  
+            
             {% endif %}
                 
-       
+            <form class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" method="POST" action="{% url 'wallet' %}">
+              {% csrf_token %}
+              
+              <select 
+                  class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600" 
+                  name="selected-account" 
+                  id="account-select"
+                  onchange="showConfirmationModal()"
+              >
+                  {% for wallet in all_wallets %}
+                      <option value="{{ wallet.Wallet_id }}" {% if wallet.Wallet_id == selected_wallet_id %}selected{% endif %}>
+                          {{ wallet.name }}
+                      </option>
+                  {% endfor %}
+              </select>
           
+              <!-- Confirmation Modal -->
+              <div id="confirmation-modal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
+                  <div class="bg-gray-900 p-6 rounded-lg">
+                      <p id="confirmation-message" class="text-white mb-4">Please confirm the selected account:</p>
+                      <button type="submit" id="confirm-button" class="bg-green-500 text-white px-4 py-2 rounded">Confirm</button>
+                      <button type="button" id="cancel-button" class="bg-red-500 text-white px-4 py-2 rounded ml-4" onclick="hideConfirmationModal()">Cancel</button>
+                  </div>
+              </div>
+          </form>
           
       </div>
       </div>
@@ -239,7 +266,50 @@
 </div>
 
 
+
+
 <script>
+// Get elements
+const accountSelect = document.getElementById('account-select');
+const confirmationModal = document.getElementById('confirmation-modal');
+const confirmButton = document.getElementById('confirm-button');
+const cancelButton = document.getElementById('cancel-button');
+const confirmationMessage = document.getElementById('confirmation-message');
+
+// Variable to track the initially selected account
+let previousSelectedIndex = accountSelect.selectedIndex;
+
+// Add event listener to detect when the selection changes
+accountSelect.addEventListener('change', function () {
+    const selectedAccountName = accountSelect.options[accountSelect.selectedIndex].text;
+
+    // Show the confirmation modal with the selected account name
+    confirmationMessage.textContent = "Please confirm the selected account: " + selectedAccountName;
+    confirmationModal.classList.remove('hidden');
+});
+
+// Confirm button functionality
+confirmButton.addEventListener('click', function () {
+    // Hide the modal and allow the form to be submitted
+    confirmationModal.classList.add('hidden');
+    // Optional: If form submission is done programmatically, use `form.submit()` here.
+});
+
+// Cancel button functionality
+cancelButton.addEventListener('click', function () {
+    // Reset the select dropdown to the previous value
+    accountSelect.selectedIndex = previousSelectedIndex;
+
+    // Hide the confirmation modal
+    confirmationModal.classList.add('hidden');
+});
+
+// Update the previousSelectedIndex when the form is successfully submitted
+document.querySelector('form').addEventListener('submit', function () {
+    previousSelectedIndex = accountSelect.selectedIndex;
+});
+
+
  document.addEventListener("DOMContentLoaded", function () {
   const walletBalance = {{ wallets.amount }};
 
@@ -341,6 +411,7 @@
     }
   });
 });
+
 
 
 </script>

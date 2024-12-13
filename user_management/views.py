@@ -16,7 +16,8 @@ from .utils import calculate_percentage, calculate_profit_or_loss
 
 def holdings(request):
     user = request.user
-    wallets = Wallet.objects.get(account__username=user.username)
+    wallets = Wallet.objects.get(account__username=user.username,selected_wallet  =True )
+    
     holdingStock = HoldingStock.objects.filter(wallet = wallets)
     Invested_amount= 0
     for stock in holdingStock:
@@ -40,7 +41,7 @@ def login_view(request):
         user = authenticate(request, email=email, password=password)
         if user is not None:
             login(request, user)
-            return redirect('home')  # Replace 'home' with your target view
+            return redirect('home')  
         else:
             messages.error(request, 'Invalid email or password')
     return render(request, 'login.html')
@@ -48,39 +49,48 @@ def login_view(request):
 
 def wallet(request):
     user = request.user
-    
+    selected_wallet_query = request.POST.get('selected-account', '')
+    selected_wallet_id = request.POST.get('selected-account') if request.method == 'POST' else None
 
-    # Filter wallets for the logged-in user
-    wallets = Wallet.objects.filter(account__username=user.username)
+    all_wallets = Wallet.objects.filter(account__username=user.username)
+
     wallet = None
-    transactions = []
-    print
-
-    if wallets.exists():
-        # Take the first wallet
-        wallet = wallets.first()
-
-        
-
-        # Fetch all transactions for this wallet
-        transactions = TransactionDetails.objects.filter(Wallet=wallet)
-        
-        wallets = wallets[0]
+    if selected_wallet_query:
+        wallet = all_wallets.filter(Wallet_id=selected_wallet_query).first()
+        if wallet:
+            all_wallets.update(selected_wallet=False)  
+            wallet.selected_wallet = True
+            wallet.save()
+        else:
+            print(f"No wallet found with ID {selected_wallet_query} for user {user.username}.")
     else:
-        print("No wallet found for the user.")
+        wallet = all_wallets.filter(selected_wallet=True).first()
+        if not wallet and all_wallets.exists():
+            wallet = all_wallets.first()
+            wallet.selected_wallet = True
+            wallet.save()
 
-    # Pass wallets to the template
+    transactions = []
+    if wallet:
+        transactions = TransactionDetails.objects.filter(Wallet=wallet)
+
     context = {
-        'wallets': wallets,
-        'transactions': transactions, 
+        'wallets': wallet,  
+        'transactions': transactions,  
         'has_wallet': wallet is not None, 
-        'request':request
+        'request': request,  
+        'all_wallets': all_wallets, 
+        'selected_wallet_id': wallet.Wallet_id if wallet else None 
+    }
 
-               }
     return render(request, 'wallet.html', context)
+
+
 def createWallet(request):
+    query  = request.POST.get('wallet_name', '')
+    print(query)
     user = request.user
-    wallet = Wallet.objects.create(account=user)
+    wallet = Wallet.objects.create(account=user,name = query)
     return redirect('wallet')
 
 
@@ -89,65 +99,66 @@ def buyStock(request):
     user = request.user
     today = datetime.today()
     ticker = request.GET.get('ticker', '').strip().upper()
-    wallets = Wallet.objects.get(account__username=user.username)
+    wallets = Wallet.objects.get(account__username=user.username, selected_wallet=True)
     stock = Stock.objects.get(yfinance_name=ticker)
     stockDetails = StockDetails.objects.filter(stock__yfinance_name=ticker, date=today)
     
     closing_price = ""
     for price in stockDetails:
-        closing_price = price.closing_price
-    holding_stock = HoldingStock.objects.filter(wallet=wallets, stock=stock, status="buy").first()
-    wallets.amount -= Decimal(closing_price)
-
-    wallets.save()  # save                            
-
-    def createTransaction():
-        stockTransaction = StockTransaction.objects.create(
-            wallet=wallets,
-            stock=stock,
-            transaction_type='buy',
-            quantity =1, 
-            price=closing_price,
-        )
-    if holding_stock:
-            # Update existing holding
-            holding_stock.quantity = int(holding_stock.quantity) + 1
-            holding_stock.inversted_amount += closing_price
-            holding_stock.average_price = (
-            holding_stock.inversted_amount / holding_stock.quantity
-             
-
-            )
-            holding_stock.current_price = closing_price
-            holding_stock.save()
-            createTransaction()
+            closing_price = price.closing_price
+            holding_stock = HoldingStock.objects.filter(wallet=wallets, stock=stock, status="buy").first()
+    if wallets.amount <  Decimal(closing_price):
+        messages.error(request, 'Insufficient funds')
+        return redirect('holdings')
     else:
-            # Create a new holding
-            HoldingStock.objects.create(
+
+        
+        wallets.amount -= Decimal(closing_price)
+
+        wallets.save()  # save                            
+
+        def createTransaction():
+            stockTransaction = StockTransaction.objects.create(
                 wallet=wallets,
                 stock=stock,
-                quantity=1,  # Buying 1 unit, adjust as necessary
-                average_price=closing_price,
-                status='buy',  # Marking as a "buy" action
-                inversted_amount=closing_price,
-                current_price = closing_price
+                transaction_type='buy',
+                quantity =1, 
+                price=closing_price,
             )
-            createTransaction()
+        if holding_stock:
+                holding_stock.quantity = int(holding_stock.quantity) + 1
+                holding_stock.inversted_amount += closing_price
+                holding_stock.average_price = (
+                holding_stock.inversted_amount / holding_stock.quantity
+                
 
-    # Redirect to 'holdings.html' or any other view
+                )
+                holding_stock.current_price = closing_price
+                holding_stock.save()
+                createTransaction()
+        else:
+                HoldingStock.objects.create(
+                    wallet=wallets,
+                    stock=stock,
+                    quantity=1,  
+                    average_price=closing_price,
+                    status='buy', 
+                    inversted_amount=closing_price,
+                    current_price = closing_price
+                )
+                createTransaction()
+
     return redirect('holdings')
 def sellStock(request):
-    from datetime import datetime  # Ensure you import datetime if not already
+    from datetime import datetime  
     user = request.user
     today = datetime.today()
     ticker = request.GET.get('ticker', '').strip().upper()
     
-    # Fetch user wallet and stock details
-    wallets = Wallet.objects.get(account__username=user.username)
+    wallets = Wallet.objects.get(account__username=user.username, selected_wallet=True)
     stock = Stock.objects.get(yfinance_name=ticker)
     stockDetails = StockDetails.objects.filter(stock__yfinance_name=ticker, date=today)
     
-    # Fetch the closing price
     closing_price = None
     for price in stockDetails:
         closing_price = price.closing_price
@@ -186,7 +197,6 @@ def sellStock(request):
 
 
 def transaction(request):
-    print("functin working....")
     if request.method == 'POST':  # Ensure we process only POST requests
         transactionType = request.POST.get('transaction', '')
         amount = request.POST.get('amount', '').strip()  # Strip whitespace from input
@@ -201,8 +211,9 @@ def transaction(request):
                 return redirect("wallet")
 
             user = request.user
-            wallet = Wallet.objects.get(account__username=user)
-
+            wallet = Wallet.objects.get(account__username=user, selected_wallet=True)
+            
+            
             if transactionType == 'deposit':
                 print(f"Deposit: {amount}")
                 wallet.amount += amount
@@ -231,5 +242,4 @@ def transaction(request):
         except Wallet.DoesNotExist:
             messages.error(request, 'Wallet not found')
 
-    # Redirect to a fallback page or wallet overview in case of an error
     return redirect("wallet")
