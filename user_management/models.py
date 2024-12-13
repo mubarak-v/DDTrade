@@ -88,7 +88,16 @@ class Wallet(models.Model):
     account = models.ForeignKey(AccountDetails, on_delete=models.CASCADE, related_name="wallet")
     selected_wallet = models.BooleanField(default=False)
     name = models.CharField(max_length=100, default='Account-1')
-
+    selected_trading_algorithm = models.ForeignKey(
+        'algo.TradingAlgorithm', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,  # Allows the field to be blank in forms
+        related_name="wallets", 
+        help_text="The selected trading algorithm for this wallet."
+    )
+    def __str__(self):
+        return self.name
 
 # transaction
 class TransactionDetails(models.Model):

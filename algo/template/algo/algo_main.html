@@ -22,38 +22,142 @@
         </div> -->
         <div class="grid grid-cols-1 gap-6">
             <!-- Card 1 -->
-            <div class="bg-gray-800 p-4 rounded-lg shadow">
+             
+             {% for Algorithm in tradingAlgorithm %}
+             <div class="bg-gray-800 p-4 rounded-lg shadow">
                 <div class="flex justify-between items-center mb-4">
                     <div class="flex items-center">
                         <img alt="Strategy Icon" class="w-10 h-10 rounded-full mr-2" height="40" src="https://storage.googleapis.com/a1aa/image/jhxpsLeNmz1elEjiam9KWuAEKCgmHF58LswYXrKXUdhkcb3TA.jpg" width="40"/>
                         <div>
-                            <h2 class="text-lg font-semibold text-white">Guru Var Ka Guru</h2>
-                            <p class="text-gray-400 text-sm">Strategy Auto Straddle</p>
+                            <h2 class="text-lg font-semibold text-white"> {{Algorithm.name}} </h2>
+                            <p style="height: 15px;"   class="text-gray-800 text-sm">  </p>
                         </div>
                     </div>
                     <i class="fas fa-ellipsis-h text-gray-500"></i>
                 </div>
                 <div class="flex items-center mb-4">
-                    <span class="bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded mr-2">Moderate</span>
-                    <span class="bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded mr-2">Intraday</span>
-                    <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded">Premium</span>
+                    
+                    <span class="bg-gray-200 text-gray-700 text-xs px-2 py-1 rounded mr-2"> {{Algorithm.trading_type}} </span>
+                    <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded"> Free </span>
                 </div>
-                <p class="text-gray-300 text-sm mb-4">Capital requirement: Rs. 1,45,000 for 1x multiplier</p>
-                <p class="text-gray-400 text-xs mb-4">This strategy involves buying and selling options to take advantage of market volatility. It is suitable for traders with moderate risk appetite.</p>
+                <p class="text-gray-300 text-sm mb-4">Capital requirement: Rs.{{Algorithm.capital_requirement}} for 1x multiplier</p>
+                <p class="text-gray-400 text-xs mb-4"> {{Algorithm.description}} </p>
                 <div class="flex items-center text-gray-400 text-xs mb-4">
                     <i class="far fa-clock mr-2"></i>
                     09:18 AM - 3:14 PM
                 </div>
                 <div class="flex items-center text-gray-400 text-xs mb-4">
                     <i class="far fa-calendar-alt mr-2"></i>
-                    Executes On - All Days
+                   {{Algorithm.executes_on}}
                 </div>
                 <div class="flex justify-between">
-                    <button class="bg-blue-600 text-white px-4 py-2 rounded-lg">Subscribe</button>
+             
+         
+                   
+                   
+                    {% if Algorithm.function_name == subscribed_algo %}
+                <button class="bg-red-600 text-white px-4 py-2 rounded-lg" onclick="showUnsubscribeConfirmationModal('{{ Algorithm.function_name }}', '{{ Algorithm.name }}')">
+                    Unsubscribe
+                </button>
+            {% else %}
+                <button class="bg-blue-600 text-white px-4 py-2 rounded-lg" onclick="showSubscribeConfirmationModal('{{ Algorithm.function_name }}', '{{ Algorithm.name }}')">
+                    Subscribe
+                </button>
+            {% endif %}
+                    
+
                     <button class="bg-white border border-blue-600 text-blue-600 px-4 py-2 rounded-lg">Learn More</button>
                 </div>
             </div>
 
+           
+        
+            
+             {% endfor %}
+<!-- Subscribe Confirmation Modal -->
+<div id="subscribe-confirmation-modal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-gray-900 p-6 rounded-lg w-11/12 max-w-md mx-auto">
+        <p id="subscribe-confirmation-message" class="text-white mb-4 text-center text-sm sm:text-base">
+            You are about to subscribe to the "{{ Algorithm.name }}" algorithm. Proceed?
+        </p>
+        <form method="post" action="{% url 'subscribeAlgorithmInWallet' %}">
+            {% csrf_token %}
+            <input id="algorithm-input" name="algorithm" type="hidden" value="">
+            <button type="submit" id="confirm-button" class="bg-green-500 text-white px-4 py-2 rounded sm:mr-2">
+                Confirm
+            </button>
+        </form>
+        <button type="button" id="cancel-button" class="bg-red-500 text-white px-4 py-2 rounded sm:ml-2 mt-2 sm:mt-0" onclick="hideConfirmationModal()">
+            Cancel
+        </button>
+    </div>
+</div>
+
+<!-- Unsubscribe Confirmation Modal -->
+<div id="unsubscribe-confirmation-modal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-gray-900 p-6 rounded-lg w-11/12 max-w-md mx-auto">
+        <p id="unsubscribe-confirmation-message" class="text-white mb-4 text-center text-sm sm:text-base">
+            You are about to unsubscribe from the "{{ Algorithm.name }}" algorithm. Proceed?
+        </p>
+        <form method="post" action="{% url 'unsubscribeAlgorithmInWallet' %}">
+            {% csrf_token %}
+            <input id="unsubscribe-algorithm-input" name="un-algorithm" type="hidden" value="">
+            <button type="submit" id="confirm-button" class="bg-green-500 text-white px-4 py-2 rounded sm:mr-2">
+                Confirm
+            </button>
+        </form>
+        <button type="button" id="cancel-button" class="bg-red-500 text-white px-4 py-2 rounded sm:ml-2 mt-2 sm:mt-0" onclick="hideConfirmationModal()">
+            Cancel
+        </button>
+    </div>
+</div>
+
+
 
 </html>
+<script>
+function showSubscribeConfirmationModal(functionName, algorithmName) {
+    const modal = document.getElementById('subscribe-confirmation-modal');
+    const algorithmInput = document.getElementById('algorithm-input');
+    const confirmationMessage = document.getElementById('subscribe-confirmation-message');
+
+    // Set the hidden input value to the selected algorithm's function name
+    algorithmInput.value = functionName;
+
+    // Update the confirmation message
+    confirmationMessage.textContent = `You are about to subscribe to the "${algorithmName}" algorithm. Proceed?`;
+
+    // Show the modal
+    modal.classList.remove('hidden');
+}
+
+// Function to show the unsubscription confirmation modal and set the algorithm details
+// Function to show the unsubscription confirmation modal and set the algorithm details
+function showUnsubscribeConfirmationModal(functionName, algorithmName) {
+    const modal = document.getElementById('unsubscribe-confirmation-modal');
+    const algorithmInput = document.getElementById('unsubscribe-algorithm-input');
+    const confirmationMessage = document.getElementById('unsubscribe-confirmation-message');
+
+    // Set the hidden input value to the selected algorithm's function name
+    algorithmInput.value = functionName;
+
+    // Update the confirmation message
+    confirmationMessage.textContent = `You are about to unsubscribe from the "${algorithmName}" algorithm. Proceed?`;
+
+    // Show the modal
+    modal.classList.remove('hidden');
+}
+// Function to hide the confirmation modal
+function hideConfirmationModal() {
+    // Get both modals by their IDs
+    const subscribeModal = document.getElementById('subscribe-confirmation-modal');
+    const unsubscribeModal = document.getElementById('unsubscribe-confirmation-modal');
+    
+    // Add the 'hidden' class to both modals to hide them
+    subscribeModal.classList.add('hidden');
+    unsubscribeModal.classList.add('hidden');
+}
+
+
+</script>
 {% endblock content %}

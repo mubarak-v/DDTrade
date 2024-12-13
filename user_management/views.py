@@ -16,7 +16,7 @@ from .utils import calculate_percentage, calculate_profit_or_loss
 
 def holdings(request):
     user = request.user
-    wallets = Wallet.objects.get(account__username=user.username)
+    wallets = Wallet.objects.get(account__username=user.username,selected_wallet  =True )
     
     holdingStock = HoldingStock.objects.filter(wallet = wallets)
     Invested_amount= 0
@@ -41,7 +41,7 @@ def login_view(request):
         user = authenticate(request, email=email, password=password)
         if user is not None:
             login(request, user)
-            return redirect('home')  # Replace 'home' with your target view
+            return redirect('home')  
         else:
             messages.error(request, 'Invalid email or password')
     return render(request, 'login.html')
@@ -52,50 +52,45 @@ def wallet(request):
     selected_wallet_query = request.POST.get('selected-account', '')
     selected_wallet_id = request.POST.get('selected-account') if request.method == 'POST' else None
 
-    # Fetch all wallets for the logged-in user
     all_wallets = Wallet.objects.filter(account__username=user.username)
 
-    # Try to find the wallet that matches the selected ID
     wallet = None
     if selected_wallet_query:
         wallet = all_wallets.filter(Wallet_id=selected_wallet_query).first()
         if wallet:
-            # Update selected_wallet: Set this wallet as selected and others as unselected
-            all_wallets.update(selected_wallet=False)  # Unselect all wallets for the user
+            all_wallets.update(selected_wallet=False)  
             wallet.selected_wallet = True
             wallet.save()
         else:
             print(f"No wallet found with ID {selected_wallet_query} for user {user.username}.")
     else:
-        # No wallet explicitly selected, find a default selected wallet
         wallet = all_wallets.filter(selected_wallet=True).first()
         if not wallet and all_wallets.exists():
-            # No wallet is marked as selected, so pick the first wallet
             wallet = all_wallets.first()
             wallet.selected_wallet = True
             wallet.save()
 
-    # Fetch transactions for the selected wallet (if any)
     transactions = []
     if wallet:
         transactions = TransactionDetails.objects.filter(Wallet=wallet)
 
-    # Context for rendering the template
     context = {
-        'wallets': wallet,  # The selected wallet object
-        'transactions': transactions,  # Transactions for the selected wallet
-        'has_wallet': wallet is not None,  # Boolean indicating if a wallet is available
-        'request': request,  # Passing request for template access
-        'all_wallets': all_wallets,  # List of all wallets for dropdown
-        'selected_wallet_id': wallet.Wallet_id if wallet else None  # ID of the selected wallet
+        'wallets': wallet,  
+        'transactions': transactions,  
+        'has_wallet': wallet is not None, 
+        'request': request,  
+        'all_wallets': all_wallets, 
+        'selected_wallet_id': wallet.Wallet_id if wallet else None 
     }
 
     return render(request, 'wallet.html', context)
 
 
 def createWallet(request):
+    query  = request.POST.get('wallet_name', '')
+    print(query)
     user = request.user
-    wallet = Wallet.objects.create(account=user)
+    wallet = Wallet.objects.create(account=user,name = query)
     return redirect('wallet')
 
 
@@ -104,65 +99,66 @@ def buyStock(request):
     user = request.user
     today = datetime.today()
     ticker = request.GET.get('ticker', '').strip().upper()
-    wallets = Wallet.objects.get(account__username=user.username)
+    wallets = Wallet.objects.get(account__username=user.username, selected_wallet=True)
     stock = Stock.objects.get(yfinance_name=ticker)
     stockDetails = StockDetails.objects.filter(stock__yfinance_name=ticker, date=today)
     
     closing_price = ""
     for price in stockDetails:
-        closing_price = price.closing_price
-    holding_stock = HoldingStock.objects.filter(wallet=wallets, stock=stock, status="buy").first()
-    wallets.amount -= Decimal(closing_price)
-
-    wallets.save()  # save                            
-
-    def createTransaction():
-        stockTransaction = StockTransaction.objects.create(
-            wallet=wallets,
-            stock=stock,
-            transaction_type='buy',
-            quantity =1, 
-            price=closing_price,
-        )
-    if holding_stock:
-            # Update existing holding
-            holding_stock.quantity = int(holding_stock.quantity) + 1
-            holding_stock.inversted_amount += closing_price
-            holding_stock.average_price = (
-            holding_stock.inversted_amount / holding_stock.quantity
-             
-
-            )
-            holding_stock.current_price = closing_price
-            holding_stock.save()
-            createTransaction()
+            closing_price = price.closing_price
+            holding_stock = HoldingStock.objects.filter(wallet=wallets, stock=stock, status="buy").first()
+    if wallets.amount <  Decimal(closing_price):
+        messages.error(request, 'Insufficient funds')
+        return redirect('holdings')
     else:
-            # Create a new holding
-            HoldingStock.objects.create(
+
+        
+        wallets.amount -= Decimal(closing_price)
+
+        wallets.save()  # save                            
+
+        def createTransaction():
+            stockTransaction = StockTransaction.objects.create(
                 wallet=wallets,
                 stock=stock,
-                quantity=1,  # Buying 1 unit, adjust as necessary
-                average_price=closing_price,
-                status='buy',  # Marking as a "buy" action
-                inversted_amount=closing_price,
-                current_price = closing_price
+                transaction_type='buy',
+                quantity =1, 
+                price=closing_price,
             )
-            createTransaction()
+        if holding_stock:
+                holding_stock.quantity = int(holding_stock.quantity) + 1
+                holding_stock.inversted_amount += closing_price
+                holding_stock.average_price = (
+                holding_stock.inversted_amount / holding_stock.quantity
+                
 
-    # Redirect to 'holdings.html' or any other view
+                )
+                holding_stock.current_price = closing_price
+                holding_stock.save()
+                createTransaction()
+        else:
+                HoldingStock.objects.create(
+                    wallet=wallets,
+                    stock=stock,
+                    quantity=1,  
+                    average_price=closing_price,
+                    status='buy', 
+                    inversted_amount=closing_price,
+                    current_price = closing_price
+                )
+                createTransaction()
+
     return redirect('holdings')
 def sellStock(request):
-    from datetime import datetime  # Ensure you import datetime if not already
+    from datetime import datetime  
     user = request.user
     today = datetime.today()
     ticker = request.GET.get('ticker', '').strip().upper()
     
-    # Fetch user wallet and stock details
-    wallets = Wallet.objects.get(account__username=user.username)
+    wallets = Wallet.objects.get(account__username=user.username, selected_wallet=True)
     stock = Stock.objects.get(yfinance_name=ticker)
     stockDetails = StockDetails.objects.filter(stock__yfinance_name=ticker, date=today)
     
-    # Fetch the closing price
     closing_price = None
     for price in stockDetails:
         closing_price = price.closing_price
@@ -201,7 +197,6 @@ def sellStock(request):
 
 
 def transaction(request):
-    print("functin working....")
     if request.method == 'POST':  # Ensure we process only POST requests
         transactionType = request.POST.get('transaction', '')
         amount = request.POST.get('amount', '').strip()  # Strip whitespace from input
@@ -247,5 +242,4 @@ def transaction(request):
         except Wallet.DoesNotExist:
             messages.error(request, 'Wallet not found')
 
-    # Redirect to a fallback page or wallet overview in case of an error
     return redirect("wallet")
