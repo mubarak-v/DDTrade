@@ -15,6 +15,7 @@ from .utils import calculate_percentage, calculate_profit_or_loss
 # Create your views here.   
 
 def holdings(request):
+    
     user = request.user
     wallets = Wallet.objects.get(account__username=user.username,selected_wallet  =True )
     
@@ -102,51 +103,54 @@ def buyStock(request):
     wallets = Wallet.objects.get(account__username=user.username, selected_wallet=True)
     stock = Stock.objects.get(yfinance_name=ticker)
     stockDetails = StockDetails.objects.filter(stock__yfinance_name=ticker, date=today)
-    
-    closing_price = ""
-    for price in stockDetails:
-            closing_price = price.closing_price
-            holding_stock = HoldingStock.objects.filter(wallet=wallets, stock=stock, status="buy").first()
-    if wallets.amount <  Decimal(closing_price):
-        messages.error(request, 'Insufficient funds')
-        return redirect('holdings')
+    if not stockDetails:
+        return HttpResponse("You do not have this stock to buy.", status=400)
     else:
 
-        
-        wallets.amount -= Decimal(closing_price)
-
-        wallets.save()  # save                            
-
-        def createTransaction():
-            stockTransaction = StockTransaction.objects.create(
-                wallet=wallets,
-                stock=stock,
-                transaction_type='buy',
-                quantity =1, 
-                price=closing_price,
-            )
-        if holding_stock:
-                holding_stock.quantity = int(holding_stock.quantity) + 1
-                holding_stock.inversted_amount += closing_price
-                holding_stock.average_price = (
-                holding_stock.inversted_amount / holding_stock.quantity
-                
-
-                )
-                holding_stock.current_price = closing_price
-                holding_stock.save()
-                createTransaction()
+        closing_price = ""
+        for price in stockDetails:
+                closing_price = price.closing_price
+                holding_stock = HoldingStock.objects.filter(wallet=wallets, stock=stock, status="buy").first()
+        if wallets.amount <  Decimal(closing_price):
+            
+            return HttpResponse("Insufficient funds", status=400)
         else:
-                HoldingStock.objects.create(
+
+            
+            wallets.amount -= Decimal(closing_price)
+
+            wallets.save()  # save                            
+
+            def createTransaction():
+                stockTransaction = StockTransaction.objects.create(
                     wallet=wallets,
                     stock=stock,
-                    quantity=1,  
-                    average_price=closing_price,
-                    status='buy', 
-                    inversted_amount=closing_price,
-                    current_price = closing_price
+                    transaction_type='buy',
+                    quantity =1, 
+                    price=closing_price,
                 )
-                createTransaction()
+            if holding_stock:
+                    holding_stock.quantity = int(holding_stock.quantity) + 1
+                    holding_stock.inversted_amount += closing_price
+                    holding_stock.average_price = (
+                    holding_stock.inversted_amount / holding_stock.quantity
+                    
+
+                    )
+                    holding_stock.current_price = closing_price
+                    holding_stock.save()
+                    createTransaction()
+            else:
+                    HoldingStock.objects.create(
+                        wallet=wallets,
+                        stock=stock,
+                        quantity=1,  
+                        average_price=closing_price,
+                        status='buy', 
+                        inversted_amount=closing_price,
+                        current_price = closing_price
+                    )
+                    createTransaction()
 
     return redirect('holdings')
 def sellStock(request):

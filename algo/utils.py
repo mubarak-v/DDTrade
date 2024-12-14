@@ -41,9 +41,10 @@ from decimal import Decimal
 from django.utils import timezone
 
 def execute_subscribed_trades():
+    print("functon is alog ")
     wallet = Wallet.objects.all()
     today = timezone.now().date()  # Use timezone-aware date
-
+    # today = date(2024,12,13)
     for w in wallet:
         algorithm = w.selected_trading_algorithm
         stocksignal_results = StocksignalResult.objects.filter(
@@ -52,7 +53,8 @@ def execute_subscribed_trades():
         )
 
         for s in stocksignal_results:
-            if s.signal == "natural":
+            # buy signals 
+            if s.signal == "buy":
                 # Ensure s.stock is a Stock instance
                 try:
                     stock_instance = s.stock if isinstance(s.stock, Stock) else Stock.objects.get(name=str(s.stock))
@@ -65,11 +67,11 @@ def execute_subscribed_trades():
                 for stock in stock_details:
                     holding_stock = HoldingStock.objects.filter(wallet=w, stock=stock_instance, status="buy").first()
                     closing_price = stock.closing_price
-                    if w.amount <  Decimal(closing_price):
-                            print(f"Not enough funds to purchase stock: {stock_instance.name}")
-                            continue
+                    if w.amount < Decimal(closing_price):
+                        print(f"Not enough funds to purchase stock: {stock_instance.name}")
+                        continue
                     else:
-                    # Deduct wallet amount
+                        # Deduct wallet amount
                         w.amount -= Decimal(closing_price)
                         w.save()
 
@@ -103,6 +105,58 @@ def execute_subscribed_trades():
                             )
                             create_transaction()
 
-                        print(f"Stock purchased: {stock_instance.name} at {closing_price}")
+                        print(f"Stock purchased: {stock_instance.name} at {closing_price}, selected algo {s.tradingAlgorithm.name}")
+
+            elif s.signal == "sell":
+                # Ensure s.stock is a Stock instance
+                try:
+                    stock_instance = s.stock if isinstance(s.stock, Stock) else Stock.objects.get(name=str(s.stock))
+                except Stock.DoesNotExist:
+                    print(f"Stock not found for signal result: {s}")
+                    continue
+
+                stock_details = StockDetails.objects.filter(date=today, stock=stock_instance)
+                closing_price = None
+                for stock in stock_details:
+                    closing_price = stock.closing_price
+
+                if closing_price is None:
+                    print(f"Closing price not found today : {stock_instance.name}")
+                    continue
+
+                # Check if the user holds the stock
+                holding_stock = HoldingStock.objects.filter(wallet=w, stock=stock_instance, status="buy").first()
+
+                if not holding_stock or int(holding_stock.quantity) <= 0:  # Convert quantity to int
+                    print(f"No stock available to sell: {stock_instance.name}")
+                    continue
+
+                # Add the sale amount to wallet
+                w.amount += closing_price
+                w.save()
+
+                # Update or remove the holding
+                holding_stock.quantity = int(holding_stock.quantity) - 1  # Convert to int before subtraction
+                holding_stock.inversted_amount -= closing_price
+
+                if holding_stock.quantity == 0:
+                    # If all stocks are sold, delete the record
+                    holding_stock.delete()
+                else:
+                    # Update the record for remaining holdings
+                    holding_stock.current_price = closing_price
+                    holding_stock.save()
+
+                # Log the transaction
+                StockTransaction.objects.create(
+                    wallet=w,
+                    stock=stock_instance,
+                    transaction_type='sell',
+                    quantity=1,
+                    price=closing_price,
+                )
+
+                print(f"Stock sold: {stock_instance.name} at {closing_price}")
+
             else:
                 print(f"Signal not natural for stock: {s.stock}")

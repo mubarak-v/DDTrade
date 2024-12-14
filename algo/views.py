@@ -8,7 +8,7 @@ from user_management.utils import saveStockHistory
 # Create your views here.
 
 def algoMain(request):
-    execute_subscribed_trades()
+    # execute_subscribed_trades()
     user = request.user
 
     # Get the wallet where selected_wallet is True
