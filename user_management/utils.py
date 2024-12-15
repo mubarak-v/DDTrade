@@ -3,7 +3,7 @@ from .models import Wallet, HoldingStock
 from datetime import datetime, timedelta
 from main.models import StockDetails, Stock
 import yfinance as yf
-from algo.utils import execute_strategy
+from algo.utils import execute_strategy,execute_subscribed_trades
 
 
 
@@ -65,7 +65,9 @@ def getStock():
                     date = today
                 )
         updateWalletStockDetails()
-        execute_strategy()  
+        execute_strategy()
+        execute_subscribed_trades() 
+        
     except Exception as e:
         print(f"Error processing stocks: {e}")
 

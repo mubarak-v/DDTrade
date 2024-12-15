@@ -3,6 +3,7 @@ from datetime import timedelta, date
 from decimal import Decimal
 from pyexpat.errors import messages
 
+from celery import shared_task
 from django.shortcuts import redirect
 
 
@@ -39,12 +40,12 @@ from django.utils import timezone
 
 from decimal import Decimal
 from django.utils import timezone
-
+@shared_task
 def execute_subscribed_trades():
     print("functon is alog ")
     wallet = Wallet.objects.all()
-    today = timezone.now().date()  # Use timezone-aware date
-    # today = date(2024,12,13)
+    # today = timezone.now().date()  # Use timezone-aware date
+    today = date(2024,12,13)
     for w in wallet:
         algorithm = w.selected_trading_algorithm
         stocksignal_results = StocksignalResult.objects.filter(
@@ -54,7 +55,7 @@ def execute_subscribed_trades():
 
         for s in stocksignal_results:
             # buy signals 
-            if s.signal == "buy":
+            if s.signal == "natural":
                 # Ensure s.stock is a Stock instance
                 try:
                     stock_instance = s.stock if isinstance(s.stock, Stock) else Stock.objects.get(name=str(s.stock))
