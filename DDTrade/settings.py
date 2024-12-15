@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+from celery.schedules import crontab
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -39,7 +41,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'main',
     'user_management',
-    'algo'
+    'algo',
+    'django_celery_beat',
+    'django_celery_results'
 ]
 
 MIDDLEWARE = [
@@ -112,15 +116,48 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kolkata'  # Change this line
 
 USE_I18N = True
 
 USE_TZ = True
 
 
+
 # settings.py
 
 STATIC_URL = '/static/'
 
+# Celery Configuration
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Redis URL (local Redis instance)
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'  # Use Redis as the result backend
 
+CELERY_ACCEPT_CONTENT = ['json']               # Accepted content types
+CELERY_TASK_SERIALIZER = 'json'                # Serialization format
+
+# Timezone
+CELERY_TIMEZONE = 'Asia/Kolkata'
+CELERY_ENABLE_UTC = False
+
+CELERY_RESULT_BACKEND = 'django-db'
+
+
+
+CELERY_BEAT_SCHEDULE = {
+    'execute-trades-at-17-55': {
+        'task': 'algo.tasks.execute_subscribed_trades_task',
+        'schedule': crontab(minute=40, hour=15),  # This schedules the task at 11:08 AM every day
+    },
+    'execute-trades-at-17-53': {
+        'task': 'algo.tasks.getStock_task',
+        'schedule': crontab(minute=30, hour=15),  # This schedules the task at 11:08 AM every day
+    },
+    'execute-trades-at-17-53': {
+        'task': 'algo.tasks.print_L',
+        'schedule': crontab(minute="*"),  # This schedules the task at 11:08 AM every day
+    },
+    'execute-trades-at-17-53': {
+        'task': 'algo.tasks.updateWalletStockDetails_task',
+        'schedule': crontab(minute=35, hour=15),  # This schedules the task at 11:08 AM every day
+    }
+}
