@@ -144,20 +144,21 @@ CELERY_RESULT_BACKEND = 'django-db'
 
 
 CELERY_BEAT_SCHEDULE = {
-    'execute-trades-at-17-55': {
-        'task': 'algo.tasks.execute_subscribed_trades_task',
-        'schedule': crontab(minute=40, hour=15),  # This schedules the task at 11:08 AM every day
-    },
     'execute-trades-at-17-53': {
         'task': 'algo.tasks.getStock_task',
-        'schedule': crontab(minute=30, hour=15),  # This schedules the task at 11:08 AM every day
+        'schedule': crontab(minute=30, hour=15,  day_of_week='1-5'),  
     },
-    'execute-trades-at-17-53': {
-        'task': 'algo.tasks.print_L',
-        'schedule': crontab(minute="*"),  # This schedules the task at 11:08 AM every day
-    },
-    'execute-trades-at-17-53': {
+     'execute-trades-at-17-53': {
         'task': 'algo.tasks.updateWalletStockDetails_task',
-        'schedule': crontab(minute=35, hour=15),  # This schedules the task at 11:08 AM every day
+        'schedule': crontab(minute=35, hour=15,  day_of_week='1-5'),  
+    },
+
+    'execute-trades-at-17-53': {
+        'task': 'algo.tasks.execute_strategy_task',
+        'schedule': crontab(minute=40, hour=15,  day_of_week='1-5'),  
+    },
+    'execute-trades-at-17-55': {
+        'task': 'algo.tasks.execute_subscribed_trades_task',
+        'schedule': crontab(minute=45, hour=15,  day_of_week='1-5'),  
     }
 }

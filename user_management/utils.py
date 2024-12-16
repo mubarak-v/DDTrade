@@ -64,9 +64,9 @@ def getStock():
                     low=low_price, 
                     date = today
                 )
-        updateWalletStockDetails()
-        execute_strategy()
-        execute_subscribed_trades() 
+        # updateWalletStockDetails()
+        # execute_strategy()
+        # execute_subscribed_trades() 
         
     except Exception as e:
         print(f"Error processing stocks: {e}")

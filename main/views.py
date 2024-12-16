@@ -33,8 +33,8 @@ def home(request):
         filtered_stocks = []
     stock_data = []
     
-    if datetime.now().weekday() not in [5, 6] and not StockDetails.objects.filter(date=today).order_by('-percentage_change') and datetime.now().time() > datetime.strptime("15:35", "%H:%M").time():
-        getStock()
+    # if datetime.now().weekday() not in [5, 6] and not StockDetails.objects.filter(date=today).order_by('-percentage_change') and datetime.now().time() > datetime.strptime("15:35", "%H:%M").time():
+    #     getStock()
     stock_data_sorted = sorted(stock_data, key=lambda x: x['percentage_change'], reverse=True)
     top_gainers = stock_data_sorted[:20]  
     top_losers = stock_data_sorted[-20:] 
