@@ -23,3 +23,8 @@ def updateWalletStockDetails_task():
 def print_L():
     print("Hello, I'm a print_L task.")
     return 0
+
+@shared_task
+def execute_strategy_task():
+    from algo.utils import execute_strategy
+    execute_strategy()
