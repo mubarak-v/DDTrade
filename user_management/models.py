@@ -165,3 +165,6 @@ class StockTransaction(models.Model):
     quantity = models.PositiveIntegerField()
     price = models.DecimalField(max_digits=100, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
+    def __str__(self):
+        return f"Transaction {self.transaction_id} - {self.transaction_type}"
+        

@@ -1,4 +1,5 @@
 # my_app/utils.py
+from algo.models import StocksignalResult
 from .models import Wallet, HoldingStock
 from datetime import datetime, timedelta
 from main.models import StockDetails, Stock
@@ -125,7 +126,7 @@ def saveStockHistory(days=90):
  # Delete all StockDetails records
 def deleteAllStockDetails():
     try:
-        StockDetails.objects.all().delete()
+        StocksignalResult.objects.all().delete()
         print("All StockDetails records have been deleted.")
     except Exception as e:
         print(f"Error deleting StockDetails: {e}")

@@ -69,6 +69,7 @@ class TradingAlgorithm(models.Model):
     def __str__(self):
         return self.name
     
+# __________
 class TradingTransaction(models.Model):
     transaction_id = models.BigIntegerField(
     unique=True,
@@ -83,6 +84,9 @@ class TradingTransaction(models.Model):
     transaction_type = models.CharField(
         choices=(('BUY', 'Buy'), ('SELL', 'Sell')), max_length=5
     )
+# _____________________
+
+
 
 class Trade(models.Model):
     trading_algorithm = models.ForeignKey(
@@ -118,6 +122,6 @@ class StocksignalResult(models.Model):
     tradingAlgorithm = models.ForeignKey(TradingAlgorithm,related_name='tradingAlgorithm_result', on_delete=models.CASCADE )
     signal = models.CharField( max_length=10)
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateField()
     def __str__(self):
         return f"{self.stock.name}- {self.tradingAlgorithm.name}-{self.signal}"

@@ -13,6 +13,7 @@ urlpatterns = [
     path('transaction/', views.transaction, name='transaction'),
     path('sellStock',views.sellStock, name='sellStock'),
     path('createWallet/', views.createWallet, name='createWallet'),
+    path('', views.account, name='account'),
 
 
 

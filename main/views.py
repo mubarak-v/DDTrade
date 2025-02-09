@@ -3,6 +3,8 @@ from django.shortcuts import render
 import io
 import base64
 from datetime import datetime, timedelta
+
+from algo.models import TradingTransaction
 from .models import Stock, StockDetails
 from django.http import JsonResponse
 from .stock_name import save_stock_data_to_db
@@ -19,7 +21,12 @@ def home(request):
     # updateWalletStockDetails()
     # execute_strategy() 
     # deleteAllStockDetails()
-    # saveStockHistory(30)
+    # saveStockHistory(90)
+    # tradingTransaction = TradingTransaction.objects.all()
+    # for i in tradingTransaction:
+    #     print(i.transaction_type) 
+
+
     s = Stock.objects.all() 
     query = request.GET.get('ticker', '').strip().upper()
     stock_names = list(Stock.objects.values_list('yfinance_name', flat=True))

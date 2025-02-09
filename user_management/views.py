@@ -6,6 +6,8 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.shortcuts import redirect
+
+from algo.models import TradingTransaction
 from .models import HoldingStock, StockTransaction
 from decimal import Decimal, InvalidOperation
 
@@ -18,6 +20,7 @@ def holdings(request):
     
     user = request.user
     wallets = Wallet.objects.get(account__username=user.username,selected_wallet  =True )
+
     
     holdingStock = HoldingStock.objects.filter(wallet = wallets)
     Invested_amount= 0
@@ -25,7 +28,6 @@ def holdings(request):
          Invested_amount += stock.inversted_amount
     print(Invested_amount)
 
-    
     context = {
         'holdingStock':holdingStock,
         'Invested_amount':Invested_amount , 
@@ -247,3 +249,13 @@ def transaction(request):
             messages.error(request, 'Wallet not found')
 
     return redirect("wallet")
+
+
+
+def account(request):
+
+    stockTransaction  = StockTransaction.objects.all()
+    context = {
+        "stock_transaction": stockTransaction
+    }
+    return render(request, "account.html", context)

@@ -9,11 +9,21 @@ def calculate_rsi(series, window=14):
     """
     Calculate the Relative Strength Index (RSI) for a given price series.
     """
+    if len(series) < window:
+        raise ValueError("Input series is too short to calculate RSI.")
+    
     delta = series.diff()
-    gain = delta.where(delta > 0, 0).rolling(window=window).mean()
-    loss = -delta.where(delta < 0, 0).rolling(window=window).mean()
+    gain = delta.where(delta > 0, 0).rolling(window=window, min_periods=1).mean()
+    loss = -delta.where(delta < 0, 0).rolling(window=window, min_periods=1).mean()
     rs = gain / loss
-    return 100 - (100 / (1 + rs))
+
+    # Compute RSI
+    rsi = 100 - (100 / (1 + rs))
+    
+    # Handle NaN values
+    rsi = rsi.fillna(50)  # Default to neutral RSI for missing values
+    return rsi
+
 
 def calculate_ema(data, period=1):
     """
@@ -37,56 +47,80 @@ def calculate_atr(df, period=14):
     return atr
 
 
-def get_stock_signal(yfinance_name):
+from datetime import timedelta
+
+from datetime import date, timedelta
+import pandas as pd
+
+def get_stock_signal(yfinance_name, today=None, rsi_window=14):
     """
     Generate buy/sell/natural signals for a given stock.
     If yesterday's signal was 'sell', keep showing 'natural' until the next 'buy'.
     If yesterday's signal was 'buy', keep showing 'natural' until the next 'sell'.
     :param yfinance_name: ID of the stock to evaluate
-    :return: Signal for yesterday's data ('buy', 'sell', 'natural')
+    :param today: Date to evaluate as a tuple (year, month, day). Defaults to today.
+    :param rsi_window: Window size for RSI calculation (default 14)
+    :return: Signal for the provided date ('buy', 'sell', 'natural')
     """
-    from datetime import date, timedelta
-    import pandas as pd
-
-    today = date.today()
-    
-    
-    # Try to find the closest available date in the last 6 days
-    stock_data = None
-    for days_back in range(1, 50):  # Start from 1 day back, go up to 6 days back
-        
-        stock_data = StockDetails.objects.filter(stock__yfinance_name=yfinance_name, date=today).order_by('date')
-        
-        if stock_data.exists():  # If stock data is found, break out of the loop
-            break
+    if today is None:
+        today = date.today()
     else:
-        # If no data was found within the last 6 days, return a message
-        return "No data available for the last 6 days."
+        # Convert the tuple (2024, 12, 19) into a date object
+        today = date(*today)
 
-    print(f"Using data from {today}.")  # Output which day we are using
-    
-    # Convert to a DataFrame for analysis
+    # Check if the given date is a weekend and adjust to the previous weekday
+    if today.weekday() == 5:  # Saturday
+        today -= timedelta(days=1)
+    elif today.weekday() == 6:  # Sunday
+        today -= timedelta(days=2)
+
+    print(f"Using data from {today}.")
+
+    # Fetch data for the last 50 days (to ensure a good range for RSI calculation)
+    stock_data = StockDetails.objects.filter(
+        stock__yfinance_name=yfinance_name
+    ).order_by('date')
+
+    if not stock_data.exists():
+        print("No data available.")
+        return "natural"
+
+    # Convert to DataFrame
     df = pd.DataFrame.from_records(
         stock_data.values('date', 'closing_price'),
         index='date'
     ).sort_index()
 
+    # Ensure we have enough data for the RSI calculation
+    if len(df) < rsi_window:
+        print(f"Insufficient data for RSI calculation. Data points: {len(df)}, required: {rsi_window}")
+        return "natural"
+
+    # If there are missing weekend data, handle it by skipping the weekend
+    while len(df) < rsi_window:
+        today -= timedelta(days=1)  # Move back to the previous weekday
+        stock_data = StockDetails.objects.filter(
+            stock__yfinance_name=yfinance_name, date__lte=today
+        ).order_by('date')
+        df = pd.DataFrame.from_records(
+            stock_data.values('date', 'closing_price'),
+            index='date'
+        ).sort_index()
+
     # Calculate RSI
-    df['RSI'] = calculate_rsi(df['closing_price'])
+    df['RSI'] = calculate_rsi(df['closing_price'], window=rsi_window)
 
-    # Add a column for signals
-    df['Signal'] = None
-
-    # Ensure we have data for yesterday
+    # If no data for RSI, return natural
     if today not in df.index:
-        return "No data available for yesterday."
+        print(f"No data for the selected day: {today}")
+        return "natural"
 
-    # Iterate through the dataframe to determine signals
-    last_signal = "natural"  # Initial state
+    # Logic for buy, sell, neutral signals based on RSI
+    last_signal = None
     for current_date in df.index:
         rsi = df.loc[current_date, 'RSI']
 
-        # Determine the current signal based on RSI
+        # Determine the signal based on RSI
         if rsi < 30:
             current_signal = "buy"
         elif rsi > 70:
@@ -94,20 +128,22 @@ def get_stock_signal(yfinance_name):
         else:
             current_signal = "natural"
 
-        # Adjust the signal based on the last signal's state
+        # Handle the logic for signal continuity
         if last_signal == "sell" and current_signal == "natural":
             current_signal = "natural"
         elif last_signal == "buy" and current_signal == "natural":
             current_signal = "natural"
         else:
-            last_signal = current_signal  # Update last signal if a new one occurs
+            last_signal = current_signal  # Update the last signal
 
         # Assign the signal for the current date
         df.loc[current_date, 'Signal'] = current_signal
 
-    # Return the signal for yesterday
     return df.loc[today, 'Signal']
-def ut_bot(yfinance_name):
+
+
+
+def ut_bot(yfinance_name, today  = None):
     """
     Generate buy/sell/natural signals for a given stock.
     If yesterday's signal was 'sell', keep showing 'natural' until the next 'buy'.
@@ -115,7 +151,12 @@ def ut_bot(yfinance_name):
     :param yfinance_name: ID of the stock to evaluate
     :return: Signal for yesterday's data ('buy', 'sell', 'natural')
     """
-    today = date.today()
+    if today is None:
+        today = date.today()
+    else:
+        # Convert the tuple (2024, 12, 3) into a date object
+        today = date(*today)
+    
     
     # Try to find the closest available date in the last 6 days
     stock_data = None
