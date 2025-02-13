@@ -1,3 +1,4 @@
+from collections import defaultdict
 import yfinance as yf
 from django.shortcuts import render
 import io
@@ -5,6 +6,7 @@ import base64
 from datetime import datetime, timedelta
 
 from algo.models import TradingTransaction
+from user_management.models import AccountDetails, HoldingStock, StockTransaction, Wallet
 from .models import Stock, StockDetails
 from django.http import JsonResponse
 from .stock_name import save_stock_data_to_db
@@ -18,14 +20,14 @@ from user_management.utils import  getStock, updateWalletStockDetails,deleteAllS
 
     
 def home(request):
+
     # updateWalletStockDetails()
     # execute_strategy() 
     # deleteAllStockDetails()
-    # saveStockHistory(90)
+    # saveStockHistory(10)
     # tradingTransaction = TradingTransaction.objects.all()
     # for i in tradingTransaction:
     #     print(i.transaction_type) 
-
 
     s = Stock.objects.all() 
     query = request.GET.get('ticker', '').strip().upper()
@@ -53,17 +55,43 @@ def home(request):
     
     return render(request, 'home.html', context)
 def stock(request):
+    # user = request.user.username
+    # print(user)
+    # account = AccountDetails.objects.filter(username=user).first()
+    # # print(account.email)
+    
+
+    # wallet = Wallet.objects.filter(account = account, selected_wallet = True).first()
+    # holding_stock = HoldingStock.objects.filter( wallet = wallet)
+    # # Dictionary to store merged stock data
+    # merged_stocks = defaultdict(lambda: {"quantity": 0, "stock": None})
+
+    # for stock in holding_stock:
+    #     yf_name = stock.stock.yfinance_name  # Get stock name
+    #     merged_stocks[yf_name]["quantity"] += stock.quantity  # Aggregate quantity
+    #     merged_stocks[yf_name]["stock"] = stock  # Store reference to stock object
+
+    # # Convert merged data into a list
+    # merged_stocks_list = [{"stock": data["stock"], "quantity": data["quantity"]} for data in merged_stocks.values()]
+
+    # # Print or use the merged stocks
+    # print(merged_stocks_list)
+    
+
     ticker = request.GET.get('ticker', '').strip().upper()
     latest_date = StockDetails.objects.filter(stock__yfinance_name=ticker).order_by('-date').first()
     if latest_date:
         # Filter the stock details for the most recent date
         stockDetails = StockDetails.objects.filter(stock__yfinance_name=ticker, date=latest_date.date)
+        stock_data = stockDetails.first()
+
     else:
         stockDetails = []
 
     context = {
             'stockDetails': stockDetails,
-            'date' : latest_date.date
+            'date' : latest_date.date, 
+            'stock_data':stock_data
 
         }
 

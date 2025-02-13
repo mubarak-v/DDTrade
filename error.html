@@ -7,3 +7,116 @@
 4 - change user_management_app models.py generate_transactin_id function like algo  generate_transaction_id_for_trading_transaction
 
 5 click buy button if no funds in account just reffreshing , buy button click if no funds in account show a alert message 
+
+6- currect holding stock , now showing same stock many times ,fix : same stock show one time ingress qty 
+
+
+
+<!-- REPORT Unrealized PROFIT AND Realized PROFIT -->
+
+# Fetch all stock transactions
+stock_transactions = StockTransaction.objects.all()
+
+# Group transactions by identity code
+transactions_by_identity = defaultdict(list)
+for transaction in stock_transactions:
+    transactions_by_identity[transaction.stock_transaction_identity_code].append(transaction)
+
+# Lists for report
+realized_profit_list = []
+unrealized_profit_list = []
+
+# Process transactions
+for identity_code, transactions in transactions_by_identity.items():
+    buy_qty = 0
+    sell_qty = 0
+    buy_total_cost = 0
+    sell_total_value = 0
+    buy_transactions = []
+    sell_transactions = []
+
+    # Separate buy and sell transactions
+    for transaction in transactions:
+        if transaction.transaction_type == "buy":
+            buy_qty += transaction.quantity
+            buy_total_cost += transaction.quantity * transaction.price
+            buy_transactions.append(transaction)
+        elif transaction.transaction_type == "sell":
+            sell_qty += transaction.quantity
+            sell_total_value += transaction.quantity * transaction.price
+            sell_transactions.append(transaction)
+
+    # Calculate Buy Average Price
+    buy_avg_price = buy_total_cost / buy_qty if buy_qty else 0
+
+    # Realized Profit Calculation (if there are sells)
+    if sell_qty > 0:
+        realized_profit = sell_total_value - (sell_qty * buy_avg_price)
+        realized_profit_list.append({
+            "identity_code": identity_code,
+            "buy_qty": buy_qty,
+            "sell_qty": sell_qty,
+            "realized_profit": realized_profit
+        })
+
+
+# Fetch the latest stock details
+last_date = StockDetails.objects.aggregate(Max('date'))['date__max']
+latest_stock_prices = {s.stock_id: s.closing_price for s in StockDetails.objects.filter(date=last_date)}
+
+# Fetch all stock transactions
+stock_transactions = StockTransaction.objects.all()
+
+# Group transactions by identity code
+transactions_by_identity = defaultdict(list)
+for transaction in stock_transactions:
+    transactions_by_identity[transaction.stock_transaction_identity_code].append(transaction)
+
+# Lists for report
+unrealized_profit_list = []
+
+# Process transactions
+for identity_code, transactions in transactions_by_identity.items():
+    buy_qty = 0
+    sell_qty = 0
+    buy_total_cost = 0
+    buy_transactions = []
+
+    # Separate buy and sell transactions
+    for transaction in transactions:
+        if transaction.transaction_type == "buy":
+            buy_qty += transaction.quantity
+            buy_total_cost += transaction.quantity * transaction.price
+            buy_transactions.append(transaction)
+        elif transaction.transaction_type == "sell":
+            sell_qty += transaction.quantity
+
+    # Calculate Buy Average Price
+    buy_avg_price = buy_total_cost / buy_qty if buy_qty else 0
+
+    # Unrealized Profit Calculation (if there are unsold stocks)
+    if buy_qty > sell_qty:
+        remaining_qty = buy_qty - sell_qty
+        stock_instance = buy_transactions[0].stock  # Get stock instance
+        market_price = latest_stock_prices.get(stock_instance.id, 0)  # Get latest closing price
+
+        unrealized_profit = (market_price - buy_avg_price) * remaining_qty
+
+        unrealized_profit_list.append({
+            "identity_code": identity_code,
+            "remaining_qty": remaining_qty,
+            "unrealized_profit": unrealized_profit
+        })
+
+
+
+# Print the report
+print("\n[Realized Profit Report]:")
+for item in realized_profit_list:
+    print(f"Identity Code: {item['identity_code']}, Sold Qty: {item['sell_qty']}, Realized Profit: {item['realized_profit']:.2f}")
+
+print("\n[Unrealized Profit Report]:")
+for item in unrealized_profit_list:
+    print(f"Identity Code: {item['identity_code']}, Remaining Qty: {item['remaining_qty']}, Unrealized Profit: {item['unrealized_profit']:.2f}")
+
+

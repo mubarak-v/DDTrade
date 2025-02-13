@@ -6,6 +6,8 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.shortcuts import redirect
+import uuid
+
 
 from algo.models import TradingTransaction
 from .models import HoldingStock, StockTransaction
@@ -99,9 +101,20 @@ def createWallet(request):
 
 
 def buyStock(request):
+
+    def generate_stock_transaction_identity_code():
+        """Generates a unique stock transaction identity code"""
+        date_str = datetime.now().strftime("%Y%m%d")  # Use datetime without prefix
+        return f"TXN{date_str}-{uuid.uuid4().hex[:6].upper()}"
+
+    identity_code = generate_stock_transaction_identity_code()
     user = request.user
     today = datetime.today()
     ticker = request.GET.get('ticker', '').strip().upper()
+    qty = request.GET.get('qty', '1')
+    
+
+    
     wallets = Wallet.objects.get(account__username=user.username, selected_wallet=True)
     stock = Stock.objects.get(yfinance_name=ticker)
     stockDetails = StockDetails.objects.filter(stock__yfinance_name=ticker, date=today)
@@ -113,13 +126,14 @@ def buyStock(request):
         for price in stockDetails:
                 closing_price = price.closing_price
                 holding_stock = HoldingStock.objects.filter(wallet=wallets, stock=stock, status="buy").first()
-        if wallets.amount <  Decimal(closing_price):
+                total_price = Decimal(closing_price)*Decimal(qty)
+        if wallets.amount <  total_price:
             
             return HttpResponse("Insufficient funds", status=400)
         else:
 
             
-            wallets.amount -= Decimal(closing_price)
+            wallets.amount -= total_price
 
             wallets.save()  # save                            
 
@@ -128,46 +142,60 @@ def buyStock(request):
                     wallet=wallets,
                     stock=stock,
                     transaction_type='buy',
-                    quantity =1, 
+                    quantity =qty, 
                     price=closing_price,
+                    stock_transaction_identity_code = identity_code
                 )
-            if holding_stock:
-                    holding_stock.quantity = int(holding_stock.quantity) + 1
-                    holding_stock.inversted_amount += closing_price
-                    holding_stock.average_price = (
-                    holding_stock.inversted_amount / holding_stock.quantity
+            # if holding_stock:
+            #         holding_stock.quantity = int(holding_stock.quantity) + qty
+            #         holding_stock.inversted_amount += closing_price
+            #         holding_stock.stock_transaction_identity_code += identity_code 
+            #         holding_stock.average_price = (
+            #         holding_stock.inversted_amount / holding_stock.quantity
                     
 
-                    )
-                    holding_stock.current_price = closing_price
-                    holding_stock.save()
-                    createTransaction()
-            else:
-                    HoldingStock.objects.create(
-                        wallet=wallets,
-                        stock=stock,
-                        quantity=1,  
-                        average_price=closing_price,
-                        status='buy', 
-                        inversted_amount=closing_price,
-                        current_price = closing_price
-                    )
-                    createTransaction()
+            #         )
+                    
+            #         holding_stock.current_price = closing_price
+            #         holding_stock.save()
+            #         createTransaction()
+            # else:
+            HoldingStock.objects.create(
+                            stock_transaction_identity_code = identity_code,
+                            wallet=wallets,
+                            stock=stock,
+                            quantity=qty,  
+                            average_price=closing_price,
+                            status='buy', 
+                            inversted_amount=total_price,
+                            current_price = closing_price
+                        )
+            createTransaction()
 
     return redirect('holdings')
 def sellStock(request):
-    from datetime import datetime  
+    
+    from datetime import datetime 
+   
     user = request.user
     today = datetime.today()
     ticker = request.GET.get('ticker', '').strip().upper()
+    
+    
+    qty = int(request.GET.get('qty', '1'))
+   
+    print(f"qty = {qty}")
     
     wallets = Wallet.objects.get(account__username=user.username, selected_wallet=True)
     stock = Stock.objects.get(yfinance_name=ticker)
     stockDetails = StockDetails.objects.filter(stock__yfinance_name=ticker, date=today)
     
+
+    
     closing_price = None
     for price in stockDetails:
-        closing_price = price.closing_price
+        closing_price = Decimal(price.closing_price)
+    
     
     if closing_price is None:
         # Handle case where closing price is not available
@@ -180,13 +208,33 @@ def sellStock(request):
         # Handle case where no stock is available to sell
         return HttpResponse("You do not have this stock to sell.", status=400)
     
-    # Add the sale amount to wallet
-    wallets.amount += closing_price
-    wallets.save()
+    def stock_transaction():
+        StockTransaction.objects.create(
+            wallet = wallets, 
+            stock = stock, 
+            transaction_type= 'sell', 
+            quantity = qty, 
+            price = closing_price, 
+            stock_transaction_identity_code =holding_stock.stock_transaction_identity_code
+
+
+        )
+        print(holding_stock.stock_transaction_identity_code)
     
+    
+    total_price = closing_price *qty
     # Update or remove the holding
-    holding_stock.quantity = int(holding_stock.quantity) - 1  # Convert to int before subtraction
-    holding_stock.inversted_amount -= closing_price
+    if int(holding_stock.quantity) < qty:
+        # If the user tries to sell more stock than they have, return an error
+        return HttpResponse(f"Your account has only {holding_stock.quantity} shares to sell", status=400)
+    
+    holding_stock.quantity = int(holding_stock.quantity) - qty  # Convert to int before subtraction
+    holding_stock.inversted_amount -= total_price
+
+    
+    # Add the sale amount to wallet
+    wallets.amount += total_price
+    wallets.save()
     
     if holding_stock.quantity == 0:
         # If all stocks are sold, delete the record
@@ -195,6 +243,7 @@ def sellStock(request):
         # Update the record for remaining holdings
         holding_stock.current_price = closing_price
         holding_stock.save()
+    stock_transaction()
     
     # Redirect to holdings or any other view
     return redirect('holdings')
