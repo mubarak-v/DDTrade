@@ -2,6 +2,8 @@ import datetime
 from django.db import models
 from django.contrib.auth.hashers import make_password
 from algo.models import TradingTransaction
+from django.utils.timezone import now
+
 import uuid
 # Create your models here.
 # email mubarak@gmail.com
@@ -141,16 +143,25 @@ class HoldingStock(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='buy')
     inversted_amount = models.DecimalField(max_digits=10000000, decimal_places=2,default=0 )
     current_price = models.DecimalField(max_digits=10000000, decimal_places=2, default=0)
-    stock_transaction_identity_code = models.CharField(max_length=255,  )
     
 
     def __str__(self):
         return self.stock.yfinance_name
+
+class HoldingStockIdentityCode(models.Model):
+    HoldingStock = models.ForeignKey(HoldingStock, related_name = "HoldingStockIdentityCode", on_delete = models.CASCADE)
+    stockTransaction_identity_code = models.CharField(max_length=255)
+    quantity = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+
+
+
+
     
 
 # inversted_amount
 class InverstedAmount(models.Model):
-    Wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)
+    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)
     inversted_amount = models.DecimalField(max_digits=10000000, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
     current_amount = models.DecimalField(max_digits=10000000,decimal_places=2)

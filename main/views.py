@@ -24,7 +24,7 @@ def home(request):
     # updateWalletStockDetails()
     # execute_strategy() 
     # deleteAllStockDetails()
-    # saveStockHistory(10)
+    # saveStockHistory(5)
     # tradingTransaction = TradingTransaction.objects.all()
     # for i in tradingTransaction:
     #     print(i.transaction_type) 
