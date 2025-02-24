@@ -21,7 +21,41 @@
                 }
             }
         }
+        
     </script>
+     <style>
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
 </head>
 <body class="bg-dark-bg text-dark-text min-h-screen">
     <div class="container mx-auto px-4 py-8">
@@ -82,34 +116,363 @@
                 </div>
 
                 <div class="p-6 border-t border-dark-border flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
-                    <form action="{% url 'buyStock' %}?ticker={{ stockDetail.stock.yfinance_name }}" method="post" class="flex-1">
+                    <!-- action="{% url 'buyStock' %}?ticker={{ stockDetail.stock.yfinance_name }}&qty=5" -->
+                    <!-- <form  method="post" class="flex-1">
                         {% csrf_token %}
                         <input name="ticker" type="hidden" value="{{ stockDetail.stock.yfinance_name }}"/>
+                        <input type="number" name="qty" hidden value="5">
+                     
+                    </form> -->
+                    <button 
+                    id='openBuyBtn'
+                        class="w-full px-4 py-3 bg-emerald-600 text-white font-semibold rounded-lg transition-all duration-300 ease-in-out hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-50 active:bg-emerald-800"
+                        type="button"
+                    >
+                        Buy Stock
+                    </button>
+
+                    <button 
+                    id='openSellBtn'
+                    class="w-full px-4 py-3 bg-red-600 text-white font-semibold rounded-lg transition-all duration-300 ease-in-out hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 active:bg-red-800"
+                    type="button"
+                >
+                    Sell Stock
+                </button>
+                
+                    <!-- <form action="{% url 'sellStock' %}?ticker={{ stockDetail.stock.yfinance_name }}&qty=5" method="post" class="flex-1">
+                        {% csrf_token %}
+                        <input name="ticker" type="hidden" value="{{ stockDetail.stock.yfinance_name }}"/>
+                  
+                    </form> -->
+                </div>
+            </div>
+            {% endfor %}
+            <!-- Buy Modal -->
+            <div id="buyModal" class="modal ">
+                <div class="modal-content max-w-sm mx-auto p-4 bg-gray-800 rounded-lg shadow-lg">
+                    <form action="{%url 'buyStock' %}" id="buyForm" class="space-y-4" novalidate>
+                        {% csrf_token %}
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <h1 class="text-lg font-semibold"> {{stock_data.stock.name}}</h1>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center space-x-2">
+                                <label for="buyQuantity" class="w-1/3">Qty.</label>
+                                <input type="text" hidden value="{{stock_data.stock.yfinance_name}}" name="ticker">
+                                <input 
+                                    type="number" 
+                                    id="buyQuantity" 
+                                    name="qty"
+                                    required
+                                    min="1"
+                                    value="1" 
+                                    class="w-2/3 bg-gray-700 p-2 rounded text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                                    oninput="updateBuyDetails()"
+                                >
+                                <i class="fas fa-layer-group text-gray-500"></i>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <label for="buyPrice" class="w-1/3">Price</label>
+                                <input 
+                                    type="number" 
+                                    id="buyPrice" 
+                                    name="price"
+                                    required
+                                    min="0.01"
+                                    step="0.01"
+                                    disabled
+                                    value="{{stock_data.closing_price}}" 
+                                    class="w-2/3 bg-gray-700 p-2 rounded text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                                >
+                                <i class="fas fa-times text-gray-500"></i>
+                            </div>
+                        </div>
+                        <div class="flex justify-between items-center my-4">
+                            <div class="space-y-1">
+                                <div>
+                                    <span>Amount </span>
+                                    <span class="text-blue-500" id="buyTotalAmount">₹ {{stock_data.closing_price}} </span>
+                                </div>
+                                <div>
+                                    <span>Charges </span>
+                                    <span class="text-blue-500">₹0.01</span>
+                                </div>
+                            </div>
+                            <i class="fas fa-sync-alt text-blue-500"></i>
+                        </div>
                         <button 
-                            class="w-full px-4 py-3 bg-emerald-600 text-white font-semibold rounded-lg transition-all duration-300 ease-in-out hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-50 active:bg-emerald-800"
                             type="submit"
+                            class="w-full px-4 py-3 bg-emerald-600 text-white font-semibold rounded-lg transition-all duration-300 ease-in-out hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-50 active:bg-emerald-800"
                         >
                             Buy Stock
                         </button>
-                    </form>
-                
-                    <form action="{% url 'sellStock' %}?ticker={{ stockDetail.stock.yfinance_name }}" method="post" class="flex-1">
-                        {% csrf_token %}
-                        <input name="ticker" type="hidden" value="{{ stockDetail.stock.yfinance_name }}"/>
                         <button 
-                            class="w-full px-4 py-3 bg-red-600 text-white font-semibold rounded-lg transition-all duration-300 ease-in-out hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 active:bg-red-800"
-                            type="submit"
+                            type="button"
+                            class="buyCloseBtn w-full bg-gray-700 text-white py-2 rounded mt-2 hover:bg-gray-600"
                         >
-                            Sell Stock
+                            Cancel
                         </button>
                     </form>
                 </div>
             </div>
-            {% endfor %}
 
-          
+    <!-- Sell Modal -->
+    <div id="sellModal" class="modal">
+        <div class="modal-content max-w-sm mx-auto p-4 bg-gray-800 rounded-lg shadow-lg">
+            <form action="{% url 'sellStock' %}" id="sellForm" class="space-y-4" novalidate>
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <h1 class="text-lg font-semibold"> {{stock_data.stock.name}}</h1>
+                    </div>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-2">
+                        <label for="sellQuantity" class="w-1/3">Qty.</label>
+                        <input type="text" hidden value="{{stock_data.stock.yfinance_name}}" name="ticker">
+                        <input 
+                            type="number" 
+                            id="sellQuantity" 
+                            name="quantity"
+                            required
+                            min="1"
+                            value="{{sell_qty}}"
+                          
+                          
+                            
+                            class="w-2/3 bg-gray-700 p-2 rounded text-white focus:ring-2 focus:ring-red-500 focus:outline-none"
+                            oninput="updateSellDetails()"
+                        >
+                        <i class="fas fa-layer-group text-gray-500"></i>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <label for="sellPrice" class="w-1/3">Price</label>
+                        <input 
+                            type="number" 
+                            id="sellPrice" 
+                            name="price"
+                            required
+                            min="0.01"
+                            step="0.01"
+                            value="{{stock_data.closing_price}}" 
+                            class="w-2/3 bg-gray-700 p-2 rounded text-white focus:ring-2 focus:ring-red-500 focus:outline-none"
+                            readonly
+                        >
+                        <i class="fas fa-times text-gray-500"></i>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center my-4">
+                    <div class="space-y-1">
+                        <div>
+                            <span>Amount </span>
+                            <span class="text-red-500" id="sellTotalAmount">₹ {{stock_data.closing_price}} </span>
+                        </div>
+                        <div>
+                            <span>Charges </span>
+                            <span class="text-red-500">₹0.00</span>
+                        </div>
+                    </div>
+                    <i class="fas fa-sync-alt text-red-500"></i>
+                </div>
+                <button 
+                    type="submit" {% if not sell_qty  %}
+                            disabled
+                    {% endif %}
+                    class="w-full px-4 py-3 text-white font-semibold rounded-lg transition-all duration-300 ease-in-out 
+                    {% if not sell_qty %}
+                        bg-gray-400 hover:bg-gray-400 cursor-not-allowed
+                    {% else %}
+                        bg-red-600 hover:bg-red-700 active:bg-red-800
+                    {% endif %}
+                    focus:outline-none focus:ring-2 focus:ring-opacity-50 
+                    {% if not sell_qty %}
+                        focus:ring-gray-500
+                    {% else %}
+                        focus:ring-red-500
+                    {% endif %}"
+            >
+                    Sell Stock
+                </button>
+                <button 
+                    type="button"
+                    class="sellCloseBtn w-full bg-gray-700 text-white py-2 rounded mt-2 hover:bg-gray-600"
+                >
+                    Cancel
+                </button>
+            </form>
         </div>
     </div>
+ 
+      
+          
+
+
+
+
+
+
+        </div>
+    </div>
+    <script>
+ 
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Buy Modal Elements
+            const buyModal = document.getElementById('buyModal');
+            const buyForm = document.getElementById('buyForm');
+            const openBuyBtn = document.getElementById('openBuyBtn');
+            const buyQuantityInput = document.getElementById('buyQuantity');
+            const buyPriceInput = document.getElementById('buyPrice');
+            const buyTotalAmount = document.getElementById('buyTotalAmount');
+            const buyCloseBtns = document.querySelectorAll('.buyCloseBtn');
+
+            // Sell Modal Elements
+            const sellModal = document.getElementById('sellModal');
+            const sellForm = document.getElementById('sellForm');
+            const openSellBtn = document.getElementById('openSellBtn');
+            const sellQuantityInput = document.getElementById('sellQuantity');
+            const sellPriceInput = document.getElementById('sellPrice');
+            const sellTotalAmount = document.getElementById('sellTotalAmount');
+            const sellCloseBtns = document.querySelectorAll('.sellCloseBtn');
+                
+            // Modal Functions
+            function openBuyModal() {
+                buyModal.classList.add('show');
+                buyForm.reset();
+                updateBuyTotal();
+            }
+
+            function closeBuyModal() {
+                buyModal.classList.remove('show');
+            }
+
+            function openSellModal() {
+                sellModal.classList.add('show');
+                sellForm.reset();
+                updateSellTotal();
+            }
+
+            function closeSellModal() {
+                sellModal.classList.remove('show');
+            }
+
+            // // Calculate Totals
+            // function updateBuyTotal() {
+            //     const quantity = parseFloat(buyQuantityInput.value) || 0;
+            //     const price = parseFloat(buyPriceInput.value) || 0;
+            //     const total = (quantity * price).toFixed(2);
+            //     buyTotalAmount.textContent = `₹${total}`;
+            // }
+
+            // function updateSellTotal() {
+            //     const quantity = parseFloat(sellQuantityInput.value) || 0;
+            //     const price = parseFloat(sellPriceInput.value) || 0;
+            //     const total = (quantity * price).toFixed(2);
+            //     sellTotalAmount.textContent = `₹${total}`;
+            // }
+
+            // Event Listeners
+            openBuyBtn.addEventListener('click', openBuyModal);
+            openSellBtn.addEventListener('click', openSellModal);
+            buyCloseBtns.forEach(btn => btn.addEventListener('click', closeBuyModal));
+            sellCloseBtns.forEach(btn => btn.addEventListener('click', closeSellModal));
+
+            // // Form Submissions
+            // buyForm.addEventListener('submit', function(e) {
+            //     e.preventDefault();
+            //     if (this.checkValidity()) {
+            //         const formData = new FormData(this);
+            //         const data = Object.fromEntries(formData);
+            //         console.log('Buy Order:', data);
+            //         closeBuyModal();
+            //     }
+            // });
+
+            // // sellForm.addEventListener('submit', function(e) {
+            //     e.preventDefault();
+            //     if (this.checkValidity()) {
+            //         const formData = new FormData(this);
+            //         const data = Object.fromEntries(formData);
+            //         console.log('Sell Order:', data);
+            //         closeSellModal();
+            //     } 
+            // });
+
+            // Update totals on input
+            buyQuantityInput.addEventListener('input', updateBuyTotal);
+            buyPriceInput.addEventListener('input', updateBuyTotal);
+            sellQuantityInput.addEventListener('input', updateSellTotal);
+            sellPriceInput.addEventListener('input', updateSellTotal);
+
+            // Close modals when clicking outside
+            buyModal.addEventListener('click', function(e) {
+                if (e.target === buyModal) closeBuyModal();
+            });
+
+            sellModal.addEventListener('click', function(e) {
+                if (e.target === sellModal) closeSellModal();
+            });
+        });
+    </script>
+
+    <script>
+    // Function to update the sell details dynamically
+    function updateSellDetails() {
+        // Get the quantity input value
+        const quantityInput = document.getElementById('sellQuantity');
+        const quantity = parseInt(quantityInput.value) || 1; // Default to 1 if invalid
+
+        // Get the closing price from the server-side template
+        const closingPrice = parseFloat('{{ stock_data.closing_price }}') || 0;
+
+        // Calculate the total amount
+        const totalAmount = quantity * closingPrice;
+
+        // Update the Price input field
+        const priceInput = document.getElementById('sellPrice');
+        priceInput.value = closingPrice.toFixed(2); // Ensure two decimal places
+
+        // Update the Amount display
+        const amountDisplay = document.getElementById('sellTotalAmount');
+        amountDisplay.textContent = `₹ ${totalAmount.toFixed(2)}`;
+    }
+
+    // Initialize the function on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        updateSellDetails();
+    });
+</script>
+
+<script>
+    // Function to update the buy details dynamically
+    function updateBuyDetails() {
+        // Get the quantity input value
+        const quantityInput = document.getElementById('buyQuantity');
+        const quantity = parseInt(quantityInput.value) || 1; // Default to 1 if invalid
+
+        // Get the closing price from the server-side template
+        const closingPrice = parseFloat('{{ stock_data.closing_price }}') || 0;
+
+        // Calculate the total amount
+        const totalAmount = quantity * closingPrice;
+
+        // Update the Price input field (disabled, so no need to modify it)
+        const priceInput = document.getElementById('buyPrice');
+        priceInput.value = closingPrice.toFixed(2); // Ensure two decimal places
+
+        // Update the Amount display
+        const amountDisplay = document.getElementById('buyTotalAmount');
+        amountDisplay.textContent = `₹ ${totalAmount.toFixed(2)}`;
+    }
+
+    // Initialize the function on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        updateBuyDetails();
+    });
+</script>
 </body>
 </html>
 {% endblock content %}

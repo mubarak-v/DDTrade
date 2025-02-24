@@ -104,6 +104,7 @@
       
       
       {% for stock in holdingStock %}
+      <a href = "/stock/?ticker={{stock.stock.yfinance_name}}">
       <div class="bg-gray-800 p-4 rounded-lg mb-4  shadow rounded-lg w-full">
       <div style="height: 90px; " >
       <div class="stock-item relative">
@@ -141,7 +142,7 @@
 
             
             <!-- Popup for this specific stock -->
-            <div class="stock-popup hidden absolute top-full left-0 w-[500px] bg-gray-800 p-4 z-10 rounded-lg shadow-lg">
+            <!-- <div class="stock-popup hidden absolute top-full left-0 w-[500px] bg-gray-800 p-4 z-10 rounded-lg shadow-lg">
               <div class="flex justify-between items-center mb-4">
                 <div>
                   <h1 class="text-xl font-semibold">{{ stock.stock.name }}</h1>
@@ -160,6 +161,7 @@
                   {% csrf_token %}
                   <input name="ticker" type="hidden" value="{{ stock.stock.yfinance_name }}"/>
                   <button type="submit" class="bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg w-1/2 mr-2">BUY</button>
+                  
                 </form>
                 
                 <form action="{% url 'sellStock' %}?ticker={{ stock.stock.yfinance_name }}" method="post" class="w-80">
@@ -173,10 +175,10 @@
                 <i class="fas fa-chart-bar mr-2"></i>
                 <a href="#" class="text-blue-500">View chart <i class="fas fa-arrow-right"></i></a>
               </div>
-            </div>
+            </div> -->
           </div>
         </div>
-        </div>
+        </div></a>
         {% endfor %}
         
         <script>

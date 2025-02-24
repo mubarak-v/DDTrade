@@ -1,16 +1,77 @@
+import datetime
+from typing import Counter
 from django.shortcuts import redirect, render
+from datetime import datetime, timedelta
 
+from algo.strategies import get_stock_signal, ut_bot
 from user_management.models import Wallet
-from . utils import execute_strategy, execute_subscribed_trades
-from algo.models import TradingAlgorithm
+from . utils import execute_strategy, execute_subscribed_trades, run_execute_subscribed_trades_for_days, run_strategy_for_days
+from algo.models import StocksignalResult, TradingAlgorithm
 from main.models import StockDetails,Stock
-from user_management.utils import saveStockHistory
+from user_management.utils import deleteAllStockDetails, saveStockHistory
 # Create your views here.
+        # Get the function_name of the selected trading algorithm
 
 def algoMain(request):
-    # execute_subscribed_trades()
-    user = request.user
+    
 
+    # saveStockHistory(120)
+    # print(get_stock_signal('ZOMATO.NS',(2024,12,10)))
+    # execute_strategy((2024,12,5))
+    # deleteAllStockDetails()
+        # saveStockHistory()
+    # run_strategy_for_days(70)
+    # execute_subscribed_trades((2024,12,2))
+    # print(ut_bot('ZOMATO.NS',(2024,11,12)))
+    # run_execute_subscribed_trades_for_days(120)
+    # saveStockHistory(120)
+    stock_t= StockDetails.objects.filter(stock__yfinance_name = 'APOLLOHOSP.NS')
+    # if stock_t.exists:
+    #     for stock in stock_t:
+    #         print(f'{stock.date} , {stock.closing_price}')
+    # else:
+    #     print('No stock data available')
+    # stockS  = StocksignalResult.objects.all()
+    # for sss in stockS:
+    #     print(f'{sss.stock.yfinance_name} , {sss.signal}')
+    buy_count = StocksignalResult.objects.filter(signal__iexact='buy').count()
+    sell_count = StocksignalResult.objects.filter(signal__iexact='sell').count()
+    natural_count = StocksignalResult.objects.filter(signal__iexact='natural').count()
+
+    print(f"Buy signals: {buy_count}")
+    print(f"Sell signals: {sell_count}")
+    print(f"Natural signals: {natural_count}")
+
+
+# Count signals
+   # 1. Check total records
+    # total_records = StocksignalResult.objects.count()
+    # print(f"Total records in StocksignalResult: {total_records}")
+
+    # # 2. Check distinct signals
+    # distinct_signals = StocksignalResult.objects.values_list('signal', flat=True).distinct()
+    # print("Distinct signals:", list(distinct_signals))
+
+    # # 3. Count signals with case-insensitive filtering
+    # buy_count = StocksignalResult.objects.filter(signal__iexact='buy').count()
+    # sell_count = StocksignalResult.objects.filter(signal__iexact='sell').count()
+    # neutral_count = StocksignalResult.objects.filter(signal__iexact='neutral').count()
+
+    # # Print results
+    # print(f"Buy signals: {buy_count}")
+    # print(f"Sell signals: {sell_count}")
+    # print(f"Neutral signals: {neutral_count}")
+
+    # # 4. Debug a few rows
+    # example_rows = StocksignalResult.objects.all()[:5]
+    # for row in example_rows:
+    #     print(f"Stock: {row.stock.name}, Algorithm: {row.tradingAlgorithm.name}, Signal: {row.signal}")
+
+
+    user = request.user
+    # Ensure the user is authenticated
+    if not request.user.is_authenticated:
+        return redirect('login')
     # Get the wallet where selected_wallet is True
     wallet = Wallet.objects.filter(account=user, selected_wallet=True).first()  # Use `.first()` to get a single wallet, or handle if no wallet is found
     
@@ -84,4 +145,5 @@ def unsubscribeToAlgo(request):
     return redirect('algoMain')
 
         
+
 

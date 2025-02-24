@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<html lang="en">
+
+<body>
+    
+    
+        <table border="1">
+            <tr >
+                <th>Transaction ID</th>
+                <th>Wallet</th>
+                <th>Stock</th>
+                <th>Transaction Type</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Created At</th>
+            </tr>
+            {% for i in stock_transaction %}
+            <tr>
+            <td>{{ i.transaction_id }}</td>
+                <td>{{ i.wallet }}</td>
+                <td>{{ i.stock }}</td>
+                <td>{{ i.transaction_type }}</td>
+                <td>{{ i.quantity }}</td>
+                <td>{{ i.price }}</td>
+                <td>{{ i.created_at }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+    
+
+        
+</body>
+
+{% endblock content %}
+    

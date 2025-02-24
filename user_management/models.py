@@ -1,6 +1,9 @@
+import datetime
 from django.db import models
 from django.contrib.auth.hashers import make_password
 from algo.models import TradingTransaction
+from django.utils.timezone import now
+
 import uuid
 # Create your models here.
 # email mubarak@gmail.com
@@ -140,14 +143,25 @@ class HoldingStock(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='buy')
     inversted_amount = models.DecimalField(max_digits=10000000, decimal_places=2,default=0 )
     current_price = models.DecimalField(max_digits=10000000, decimal_places=2, default=0)
+    
 
     def __str__(self):
         return self.stock.yfinance_name
+
+class HoldingStockIdentityCode(models.Model):
+    HoldingStock = models.ForeignKey(HoldingStock, related_name = "HoldingStockIdentityCode", on_delete = models.CASCADE)
+    stockTransaction_identity_code = models.CharField(max_length=255)
+    quantity = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
+
+
+
+
     
 
 # inversted_amount
 class InverstedAmount(models.Model):
-    Wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)
+    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE)
     inversted_amount = models.DecimalField(max_digits=10000000, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
     current_amount = models.DecimalField(max_digits=10000000,decimal_places=2)
@@ -165,3 +179,15 @@ class StockTransaction(models.Model):
     quantity = models.PositiveIntegerField()
     price = models.DecimalField(max_digits=100, decimal_places=2)
     created_at = models.DateTimeField(auto_now_add=True)
+    stock_transaction_identity_code = models.CharField(max_length=30)
+
+    def save(self, *args,**kwargs ):
+
+        if not self.stock_transaction_identity_code:
+            date_str = datetime.datetime.now().strftime("%Y%m%d")
+            self.stock_transaction_identity_code = f"TXN{date_str}-{uuid.uuid4().hex[:6].upper()}"
+
+        super().save(*args, **kwargs)
+    def __str__(self):
+        return f"Transaction {self.transaction_id} - {self.transaction_type}"
+        

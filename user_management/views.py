@@ -6,7 +6,11 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.shortcuts import redirect
-from .models import HoldingStock, StockTransaction
+import uuid
+
+
+from algo.models import TradingTransaction
+from .models import HoldingStock, HoldingStockIdentityCode, StockTransaction
 from decimal import Decimal, InvalidOperation
 
 from main.models import StockDetails,Stock
@@ -15,9 +19,12 @@ from .utils import calculate_percentage, calculate_profit_or_loss
 # Create your views here.   
 
 def holdings(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
     
     user = request.user
     wallets = Wallet.objects.get(account__username=user.username,selected_wallet  =True )
+
     
     holdingStock = HoldingStock.objects.filter(wallet = wallets)
     Invested_amount= 0
@@ -25,7 +32,6 @@ def holdings(request):
          Invested_amount += stock.inversted_amount
     print(Invested_amount)
 
-    
     context = {
         'holdingStock':holdingStock,
         'Invested_amount':Invested_amount , 
@@ -49,6 +55,8 @@ def login_view(request):
 
 
 def wallet(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
     user = request.user
     selected_wallet_query = request.POST.get('selected-account', '')
     selected_wallet_id = request.POST.get('selected-account') if request.method == 'POST' else None
@@ -97,9 +105,22 @@ def createWallet(request):
 
 
 def buyStock(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
+
+    def generate_stock_transaction_identity_code():
+        """Generates a unique stock transaction identity code"""
+        date_str = datetime.now().strftime("%Y%m%d")  # Use datetime without prefix
+        return f"TXN{date_str}-{uuid.uuid4().hex[:6].upper()}"
+
+    identity_code = generate_stock_transaction_identity_code()
     user = request.user
     today = datetime.today()
     ticker = request.GET.get('ticker', '').strip().upper()
+    qty = int(request.GET.get('qty', '1'))
+    
+
+    
     wallets = Wallet.objects.get(account__username=user.username, selected_wallet=True)
     stock = Stock.objects.get(yfinance_name=ticker)
     stockDetails = StockDetails.objects.filter(stock__yfinance_name=ticker, date=today)
@@ -111,13 +132,14 @@ def buyStock(request):
         for price in stockDetails:
                 closing_price = price.closing_price
                 holding_stock = HoldingStock.objects.filter(wallet=wallets, stock=stock, status="buy").first()
-        if wallets.amount <  Decimal(closing_price):
+                total_price = Decimal(closing_price)*Decimal(qty)
+        if wallets.amount <  total_price:
             
             return HttpResponse("Insufficient funds", status=400)
         else:
 
             
-            wallets.amount -= Decimal(closing_price)
+            wallets.amount -= total_price
 
             wallets.save()  # save                            
 
@@ -126,74 +148,143 @@ def buyStock(request):
                     wallet=wallets,
                     stock=stock,
                     transaction_type='buy',
-                    quantity =1, 
+                    quantity =qty, 
                     price=closing_price,
+                    stock_transaction_identity_code = identity_code
                 )
+            
             if holding_stock:
-                    holding_stock.quantity = int(holding_stock.quantity) + 1
+                    holding_stock.quantity = int(holding_stock.quantity) + qty
                     holding_stock.inversted_amount += closing_price
                     holding_stock.average_price = (
                     holding_stock.inversted_amount / holding_stock.quantity
                     
 
                     )
+                    
                     holding_stock.current_price = closing_price
                     holding_stock.save()
-                    createTransaction()
-            else:
-                    HoldingStock.objects.create(
-                        wallet=wallets,
-                        stock=stock,
-                        quantity=1,  
-                        average_price=closing_price,
-                        status='buy', 
-                        inversted_amount=closing_price,
-                        current_price = closing_price
+                    HoldingStockIdentityCode.objects.create(
+                        HoldingStock = holding_stock, 
+                        stockTransaction_identity_code = identity_code, 
+                        quantity = qty,
                     )
                     createTransaction()
+            else:
+                holding_stock = HoldingStock.objects.create(
+                           
+                            wallet=wallets,
+                            stock=stock,
+                            quantity=qty,  
+                            average_price=closing_price,
+                            status='buy', 
+                            inversted_amount=total_price,
+                            current_price = closing_price
+                        )
+                HoldingStockIdentityCode.objects.create(
+                            HoldingStock =holding_stock, 
+                            stockTransaction_identity_code = identity_code, 
+                            quantity = qty, 
+
+
+                )
+            createTransaction()
 
     return redirect('holdings')
 def sellStock(request):
-    from datetime import datetime  
+    
+    from datetime import datetime
+    from decimal import Decimal
+
     user = request.user
     today = datetime.today()
     ticker = request.GET.get('ticker', '').strip().upper()
-    
+    qty = int(request.GET.get('quantity', '1'))
+
+    # Fetch wallet, stock, and stock details
     wallets = Wallet.objects.get(account__username=user.username, selected_wallet=True)
     stock = Stock.objects.get(yfinance_name=ticker)
     stockDetails = StockDetails.objects.filter(stock__yfinance_name=ticker, date=today)
-    
+
+    # Get closing price
     closing_price = None
     for price in stockDetails:
-        closing_price = price.closing_price
-    
+        closing_price = Decimal(price.closing_price)
+
     if closing_price is None:
-        # Handle case where closing price is not available
         return HttpResponse("Stock closing price not found for today.", status=400)
-    
+
     # Check if the user holds the stock
     holding_stock = HoldingStock.objects.filter(wallet=wallets, stock=stock, status="buy").first()
-    
-    if not holding_stock or int(holding_stock.quantity) <= 0:  # Convert quantity to int
-        # Handle case where no stock is available to sell
+    if not holding_stock or int(holding_stock.quantity) <= 0:
         return HttpResponse("You do not have this stock to sell.", status=400)
-    
-    # Add the sale amount to wallet
-    wallets.amount += closing_price
+
+    # Variable to store the stock transaction identity code
+    stock_transaction_identity_code = None
+
+    # Recursive helper function to handle selling logic
+    def process_sell(qty_to_sell):
+        nonlocal stock_transaction_identity_code  # Use nonlocal to modify the outer variable
+
+        # Get the oldest HoldingStockIdentityCode
+        holding_stock_identity_code = HoldingStockIdentityCode.objects.filter(
+            HoldingStock=holding_stock, HoldingStock__wallet=wallets
+        ).order_by('created_at').first()
+
+        if not holding_stock_identity_code:
+            # No more HoldingStockIdentityCode objects to process
+            return HttpResponse("Insufficient stock holdings to complete the sale.", status=400)
+
+        if qty_to_sell > holding_stock_identity_code.quantity:
+            # Reduce the quantity of the current HoldingStockIdentityCode
+            qty_to_sell -= holding_stock_identity_code.quantity
+            stock_transaction_identity_code = holding_stock_identity_code.stockTransaction_identity_code
+            holding_stock_identity_code.delete()
+            # Recursively process the remaining quantity
+            return process_sell(qty_to_sell)
+        elif qty_to_sell == holding_stock_identity_code.quantity:
+            # Delete the current HoldingStockIdentityCode as it's fully sold
+            stock_transaction_identity_code = holding_stock_identity_code.stockTransaction_identity_code
+            holding_stock_identity_code.delete()
+        else:
+            # Partially sell the current HoldingStockIdentityCode
+            stock_transaction_identity_code = holding_stock_identity_code.stockTransaction_identity_code
+            holding_stock_identity_code.quantity -= qty_to_sell
+            holding_stock_identity_code.save()
+
+    # Call the recursive helper function
+    process_sell(qty)
+
+    # Calculate total price and update wallet and holding stock
+    total_price = closing_price * qty
+
+    if int(holding_stock.quantity) < qty:
+        return HttpResponse(f"Your account has only {holding_stock.quantity} shares to sell", status=400)
+
+    holding_stock.quantity = int(holding_stock.quantity) - qty
+    holding_stock.inversted_amount -= total_price
+    wallets.amount += total_price
     wallets.save()
-    
-    # Update or remove the holding
-    holding_stock.quantity = int(holding_stock.quantity) - 1  # Convert to int before subtraction
-    holding_stock.inversted_amount -= closing_price
-    
+
     if holding_stock.quantity == 0:
-        # If all stocks are sold, delete the record
         holding_stock.delete()
     else:
-        # Update the record for remaining holdings
         holding_stock.current_price = closing_price
         holding_stock.save()
-    
+
+    # Create a stock transaction record
+    def stock_transaction():
+        StockTransaction.objects.create(
+            wallet=wallets,
+            stock=stock,
+            transaction_type='sell',
+            quantity=qty,
+            price=closing_price,
+            stock_transaction_identity_code=stock_transaction_identity_code  # Use the stored value
+        )
+
+    stock_transaction()
+
     # Redirect to holdings or any other view
     return redirect('holdings')
 
@@ -247,3 +338,13 @@ def transaction(request):
             messages.error(request, 'Wallet not found')
 
     return redirect("wallet")
+
+
+
+def account(request):
+
+    stockTransaction  = StockTransaction.objects.all()
+    context = {
+        "stock_transaction": stockTransaction
+    }
+    return render(request, "account.html", context)

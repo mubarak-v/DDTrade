@@ -1,5 +1,5 @@
-import datetime
-from datetime import timedelta, date
+
+from datetime import date, timedelta
 from decimal import Decimal
 from pyexpat.errors import messages
 
@@ -11,11 +11,13 @@ from main.models import Stock, StockDetails
 from user_management.models import HoldingStock, StockTransaction, Wallet
 from . models import  StocksignalResult
 from . strategies import get_stock_signal, ut_bot
-def execute_strategy():
+def execute_strategy(today = None):
+    todayDate  = today
+    
     from .models import TradingAlgorithm
     stocks = Stock.objects.all()
     
-    tradingalgorithm = TradingAlgorithm.objects.all()
+    tradingalgorithm = TradingAlgorithm.objects.filter(is_active = True)
     for algorithm in tradingalgorithm:
         strategy_function = globals().get(algorithm.function_name)
         if strategy_function is None:
@@ -25,12 +27,33 @@ def execute_strategy():
         print(f"Strategy function: {strategy_function}")
         
         for stock in stocks:
-            result = strategy_function(stock.name)
+            if today == None:
+                todayDateTupple  = today
+                todayDate =  date.today()
+                todayDateTupple = (todayDate.year, todayDate.month, todayDate.day)
+            else:
+
+                todayDateTupple = today
+            result = strategy_function(stock.yfinance_name,todayDateTupple)
+            if isinstance(result, str) and result.startswith("No"):
+                print(f"No data {stock.yfinance_name}:  {todayDateTupple}   ")
+            else:
+                existing_result = StocksignalResult.objects.filter(
+                        stock=stock,
+                        tradingAlgorithm=algorithm,
+                        signal=result,
+                        created_at=date(*todayDateTupple)
+                    ).first()
+                if existing_result:
+                    print("Existing result")
+                else:
+
+                    stocksignalResult= StocksignalResult(stock=stock, tradingAlgorithm=algorithm, signal=result,created_at =date(*todayDateTupple))
+                    stocksignalResult.save()
+                    print(f"stock_name: {stock.yfinance_name},function name:{algorithm.name} result: {result}")
             
-            stocksignalResult= StocksignalResult(stock=stock, tradingAlgorithm=algorithm, signal=result)
-            stocksignalResult.save()
             
-            print(f"stock_name: {stock.name},function name:{stock.name} result: {result}")
+            
 
 
 from django.utils import timezone
@@ -41,21 +64,31 @@ from django.utils import timezone
 from decimal import Decimal
 from django.utils import timezone
 @shared_task
-def execute_subscribed_trades():
-    print("functon is alog ")
+def execute_subscribed_trades(today  = None):
+   
     wallet = Wallet.objects.all()
+    if today is None:
+        today = date.today()
+    else:
+        today = date(*today)
     # today = timezone.now().date()  # Use timezone-aware date
-    today = date(2024,12,13)
+    # # today = date.today()
+    # today = date(2024,12,10)
     for w in wallet:
+        
         algorithm = w.selected_trading_algorithm
         stocksignal_results = StocksignalResult.objects.filter(
             tradingAlgorithm=algorithm,
-            created_at__date=today  # Use the __date lookup to match the date part
+            created_at=today  # Use the __date lookup to match the date part
         )
+        
+            
+        
 
         for s in stocksignal_results:
             # buy signals 
-            if s.signal == "natural":
+            if s.signal == "buy":
+
                 # Ensure s.stock is a Stock instance
                 try:
                     stock_instance = s.stock if isinstance(s.stock, Stock) else Stock.objects.get(name=str(s.stock))
@@ -161,3 +194,51 @@ def execute_subscribed_trades():
 
             else:
                 print(f"Signal not natural for stock: {s.stock}")
+
+from datetime import datetime, timedelta
+
+
+
+def run_strategy_for_days(days):
+    # Get today's date
+    today = datetime.today()
+    
+    # Calculate the start date by subtracting the given number of days
+    start_date = today - timedelta(days=days)
+    
+    # Loop through the days and call execute_strategy
+    current_date = start_date
+    while current_date <= today:
+        # Convert current date to a tuple (year, month, day)
+        date_tuple = (current_date.year, current_date.month, current_date.day)
+        
+        # Call execute_strategy with the date tuple
+        execute_strategy(date_tuple)
+        
+        # Move to the next day
+        current_date += timedelta(days=1)
+
+# Example: Run the strategy for the last 10 days
+
+def run_execute_subscribed_trades_for_days(days):
+    # Get today's date
+    today = datetime.today()
+    
+    # Calculate the start date by subtracting the given number of days
+    start_date = today - timedelta(days=days)
+    
+    # Loop through the days and call execute_strategy
+    current_date = start_date
+    while current_date <= today:
+        # Convert current date to a tuple (year, month, day)
+        date_tuple = (current_date.year, current_date.month, current_date.day)
+        
+        # Call execute_strategy with the date tuple
+        execute_subscribed_trades(date_tuple)
+        
+        # Move to the next day
+        current_date += timedelta(days=1)
+
+# Example: Run the strategy for the last 10 days
+
+
