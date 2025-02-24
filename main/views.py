@@ -28,6 +28,7 @@ def home(request):
     # tradingTransaction = TradingTransaction.objects.all()
     # for i in tradingTransaction:
     #     print(i.transaction_type) 
+    
 
     s = Stock.objects.all() 
     query = request.GET.get('ticker', '').strip().upper()
@@ -55,14 +56,29 @@ def home(request):
     
     return render(request, 'home.html', context)
 def stock(request):
-    # user = request.user.username
+    ticker = request.GET.get('ticker', '').strip().upper()
+    user = request.user.username
     # print(user)
-    # account = AccountDetails.objects.filter(username=user).first()
+    account = AccountDetails.objects.filter(username=user).first()
     # # print(account.email)
     
+    sell_qty = 0
+    wallet = Wallet.objects.filter(account = account, selected_wallet = True).first()
+    
+    holding_stock = HoldingStock.objects.filter( wallet = wallet, stock__yfinance_name = ticker)
+    if holding_stock:
+         sell_qty = holding_stock.first().quantity
+    
+    
+    
 
-    # wallet = Wallet.objects.filter(account = account, selected_wallet = True).first()
-    # holding_stock = HoldingStock.objects.filter( wallet = wallet)
+  
+    
+    
+         
+   
+    
+        
     # # Dictionary to store merged stock data
     # merged_stocks = defaultdict(lambda: {"quantity": 0, "stock": None})
 
@@ -76,9 +92,10 @@ def stock(request):
 
     # # Print or use the merged stocks
     # print(merged_stocks_list)
+
     
 
-    ticker = request.GET.get('ticker', '').strip().upper()
+    
     latest_date = StockDetails.objects.filter(stock__yfinance_name=ticker).order_by('-date').first()
     if latest_date:
         # Filter the stock details for the most recent date
@@ -91,7 +108,8 @@ def stock(request):
     context = {
             'stockDetails': stockDetails,
             'date' : latest_date.date, 
-            'stock_data':stock_data
+            'stock_data':stock_data, 
+            'sell_qty': sell_qty
 
         }
 

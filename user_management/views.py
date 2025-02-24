@@ -19,6 +19,8 @@ from .utils import calculate_percentage, calculate_profit_or_loss
 # Create your views here.   
 
 def holdings(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
     
     user = request.user
     wallets = Wallet.objects.get(account__username=user.username,selected_wallet  =True )
@@ -53,6 +55,8 @@ def login_view(request):
 
 
 def wallet(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
     user = request.user
     selected_wallet_query = request.POST.get('selected-account', '')
     selected_wallet_id = request.POST.get('selected-account') if request.method == 'POST' else None
@@ -101,6 +105,8 @@ def createWallet(request):
 
 
 def buyStock(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
 
     def generate_stock_transaction_identity_code():
         """Generates a unique stock transaction identity code"""
@@ -186,6 +192,7 @@ def buyStock(request):
 
     return redirect('holdings')
 def sellStock(request):
+    
     from datetime import datetime
     from decimal import Decimal
 

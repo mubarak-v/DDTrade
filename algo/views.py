@@ -13,6 +13,8 @@ from user_management.utils import deleteAllStockDetails, saveStockHistory
         # Get the function_name of the selected trading algorithm
 
 def algoMain(request):
+    
+
     # saveStockHistory(120)
     # print(get_stock_signal('ZOMATO.NS',(2024,12,10)))
     # execute_strategy((2024,12,5))
@@ -67,6 +69,9 @@ def algoMain(request):
 
 
     user = request.user
+    # Ensure the user is authenticated
+    if not request.user.is_authenticated:
+        return redirect('login')
     # Get the wallet where selected_wallet is True
     wallet = Wallet.objects.filter(account=user, selected_wallet=True).first()  # Use `.first()` to get a single wallet, or handle if no wallet is found
     
