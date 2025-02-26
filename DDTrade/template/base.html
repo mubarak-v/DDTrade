@@ -351,11 +351,14 @@
             font-size: 0.875rem;
             line-height: 1.25rem;
         }
+        
     </style>
 </head>
 
-<body>
+<body style="z-index: 5;">
     <div class="sidebar">
+    
+
 
         <div class="profile-section">
 
@@ -399,6 +402,7 @@
     </div>
 
     <div class="main-content-wrapper">
+        
         <div class="header bg-gray-800">
             <div class="search-container">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
@@ -407,8 +411,13 @@
                     <circle cx="11" cy="11" r="8"></circle>
                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
-                <input type="text" placeholder="Search stocks, trades, reports...">
+                <input id="stockSearch" type="text" placeholder="Search stocks, trades, reports...">
+
+                </h1>
             </div>
+           
+            <div class="search-results"></div>
+
             <div class="header-icons">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -428,13 +437,49 @@
 
         <div  class="main-content bg-gray-800 ">
 
-                
             {% block content %}
-
+ 
             {% endblock content %}
         </div>
-
         <script>
+            const stock_names = {{ stock_names_list|safe }};
+            const searchInput = document.getElementById('stockSearch');
+            const resultList = document.getElementById('resultList');
+            const resultContainer = document.getElementById('resultContainer');
+        
+            searchInput.addEventListener('input', function() {
+                const filter = searchInput.value.toLowerCase();
+                resultList.innerHTML = '';
+        
+                if (filter) {
+                    const filteredStocks = stock_names.filter(name => name.toLowerCase().includes(filter));
+        
+                    if (filteredStocks.length === 0) {
+                        resultContainer.style.display = 'none'; // Hide if no results
+                    } else {
+                        resultContainer.style.display = 'block'; // Show results
+                        filteredStocks.forEach(stock => {
+                            const li = document.createElement('li');
+                            li.className = 'list-group-item';
+                            
+                            const a = document.createElement('a');
+                            a.href = `http://127.0.0.1:8000/stock/?ticker=${stock}`;
+                            a.textContent = stock;
+                            a.style.textDecoration = 'none';
+                            a.style.color = 'inherit';
+                            
+                            li.appendChild(a);
+                            resultList.appendChild(li);
+                        });
+                    }
+                } else {
+                    resultContainer.style.display = 'none'; // Hide when input is empty
+                }
+            });
+        </script>
+        
+        <script>
+
             // Get all buttons
             const buttons = document.querySelectorAll('.sidebar-btn');
             const mainContent = document.querySelector('.main-content');
@@ -452,7 +497,9 @@
 
                 });
             });
+            
         </script>
+        
 </body>
 
 </html>

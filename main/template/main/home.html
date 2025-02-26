@@ -59,15 +59,103 @@
         line-height: 1.25rem;
       }
     </style>
+    <style>
+      #resultContainer::-webkit-scrollbar {
+          display: none;
+      }
+  </style>
+      <style>
+        #resultContainer::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .result-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #2d3748;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .result-item:hover {
+            background-color: #1f2937;
+        }
+        
+        .close-button {
+            background: none;
+            border: none;
+            color: #9ca3af;
+            font-size: 20px;
+            cursor: pointer;
+            transition: color 0.2s ease;
+            position: absolute;
+            top: 10px;
+            right: 15px;
+        }
+        
+        .close-button:hover {
+            color: #e5e7eb;
+        }
+    </style>
   </head>
-  <body class="flex">
+  <body class="flex"  style="  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  position: relative;">
+<!--     
+    <div class="background" style=" 
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    background-color: #1E293B; /* Slate dark background */
+    z-index: 1;">
+    dsfsd
+</div>  -->
+
+<div class="foreground" id="resultContainer" style="
+min-height: 80px;
+    max-width: 400px;
+    width: 400px;
+    overflow: scroll; 
+    position: absolute;
+    z-index: 2;
+    padding: 20px;
+    background-color: #111827;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    display: none;
+    
+    /* Hide scrollbars */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+">
+    <!-- Add this to hide WebKit scrollbars (Chrome, Safari) -->
+
+
+    <button class="close-button" onclick="document.getElementById('resultContainer').style.display = 'none'">×</button>
+
+    <div id="resultList" style="
+        z-index: 5;
+        color: white;
+        font-family: Arial, sans-serif;
+        font-size: 24px;
+        margin-top: 10px;
+    ">
+        Search Result
+    </div>
+</div>
+
+<!-- Hide scrollbar for Chrome, Safari, and Edge -->
+
+
+
+
+    
     <div class="mb-4 ">
       <h1 class="text-2xl font-bold">Dashboard</h1>
       <div class="flex space-x-4 mt-2">
-        <!-- <div class="flex items-center space-x-1">
-          <span class="text-blue-500">Transactions</span>
-          <span class="bg-blue-500 text-white rounded-full px-2"> 5</span>
-        </div> -->
+   
       </div>
     </div>
     <!-- Sidebar -->
@@ -156,6 +244,7 @@
           </div>
         </div> -->
         <div class="bg-gray-800 shadow rounded-lg w-full">
+          
           <!-- Header -->
           <div class="flex justify-between p-4 border-b border-gray-700">
             <div class="text-gray-400 w-1/2">STOCKS</div>
@@ -164,12 +253,14 @@
           </div>
 
           <!-- Stock Rows -->
-          <div class="w-full">
+           
             {% for stock in top_gainers %}
+            
             <!-- Use top_gainers or top_losers here -->
             <div
-              class="flex justify-between items-center p-4 border-b border-gray-700"
+              class="flex justify-between items-center p-4 border-b border-gray-700" 
             >
+            
               <div class="flex items-center space-x-4 w-1/2">
                 <div>
                   <a href="{% url 'stock' %}?ticker={{ stock.stock.yfinance_name }}">
