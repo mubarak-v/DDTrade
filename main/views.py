@@ -20,11 +20,14 @@ from user_management.utils import  getStock, updateWalletStockDetails,deleteAllS
 
     
 def home(request):
+    stock_names = Stock.objects.all()
+    # create stock y fiance name list
+    stock_names_list = [stock.yfinance_name for stock in stock_names ]
 
     # updateWalletStockDetails()
     # execute_strategy() 
     # deleteAllStockDetails()
-    # saveStockHistory(5)
+    saveStockHistory(5)
     # tradingTransaction = TradingTransaction.objects.all()
     # for i in tradingTransaction:
     #     print(i.transaction_type) 
@@ -51,6 +54,8 @@ def home(request):
     context = {
             'filtered_stocks': filtered_stocks,
             'top_gainers': today_stock_details,
+            'stock_names':stock_names, 
+            'stock_names_list':stock_names_list
             
         }
     
